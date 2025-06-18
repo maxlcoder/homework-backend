@@ -2,7 +2,9 @@ package controller
 
 import (
 	"fmt"
+	"log"
 
+	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 	request "github.com/maxlcoder/homework-backend/app/request/user"
@@ -40,6 +42,12 @@ func (controller *UserController) Register(c *gin.Context) {
 		controller.Error(c, 400, "数据获取失败")
 		return
 	}
+	// 密码 hash 处理
+	user.Password, err = model.HashPassword(user.Password)
+	if err != nil {
+		controller.Error(c, 400, "密码处理失败")
+		return
+	}
 	_, err = controller.userService.Create(&user)
 	if err != nil {
 		controller.Error(c, 400, fmt.Errorf("注册失败：%w", err).Error())
@@ -49,10 +57,13 @@ func (controller *UserController) Register(c *gin.Context) {
 	controller.Success(c, dataID)
 }
 
-func (controller *UserController) Login(c *gin.Context) {
-	
-}
-
 func (controller *UserController) Me(c *gin.Context) {
-
+	claims := jwt.ExtractClaims(c)
+	user, _ := c.Get("id")
+	log.Default().Println(claims)
+	log.Default().Println(user)
+	//c.JSON(200, gin.H{
+	//	"userID":   claims["id"].(uint),
+	//	"userName": user.(*model.User).Name,
+	//})
 }
