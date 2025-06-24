@@ -1,7 +1,14 @@
 package route
 
-import "github.com/maxlcoder/homework-backend/app/controller"
+import (
+	"github.com/maxlcoder/homework-backend/app/controller"
+)
 
-type ApiController struct {
+type ApiControllers struct {
 	UserController *controller.UserController
+}
+
+type AdminControllers struct {
+	UserController  *controller.AdminUserController
+	AdminController *controller.AdminController
 }

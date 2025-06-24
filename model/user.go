@@ -2,8 +2,6 @@ package model
 
 import (
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -25,12 +23,10 @@ type UserFilter struct {
 	UpdatedAt *time.Time
 }
 
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
+func (u *User) GetId() uint {
+	return u.ID
 }
 
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
+func (u *User) GetPassword() string {
+	return u.Password
 }

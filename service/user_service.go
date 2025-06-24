@@ -9,6 +9,8 @@ import (
 
 type UserServiceInterface interface {
 	Create(*model.User) (*model.User, error)
+	GetById(id uint) (*model.User, error)
+	GetPageByFilter(modelFilter model.UserFilter, paginationQuery model.PaginationQuery) (int64, []model.User, error)
 }
 
 type UserService struct {
@@ -46,12 +48,26 @@ func (u *UserService) List() {
 	panic("implement me")
 }
 
-func (u *UserService) GetById() {
-	//TODO implement me
-	panic("implement me")
+func (u *UserService) GetById(id uint) (*model.User, error) {
+	userFiler := model.UserFilter{
+		ID: &id,
+	}
+	user, err := u.UserRepository.FindBy(userFiler)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (u UserService) GetByObject() {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (u UserService) GetPageByFilter(modelFilter model.UserFilter, paginationQuery model.PaginationQuery) (int64, []model.User, error) {
+	total, users, err := u.UserRepository.Paginate(modelFilter, paginationQuery)
+	if err != nil {
+		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
+	}
+	return total, users, nil
 }

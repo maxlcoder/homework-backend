@@ -3,6 +3,7 @@ package validator
 import (
 	"errors"
 	"reflect"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -49,6 +50,22 @@ func BindAndValidate(c *gin.Context, obj interface{}) ([]string, bool) {
 		return errorTrans, false
 	}
 	return nil, true
+}
+
+func BindQueryAndValidate(c *gin.Context, obj interface{}) ([]string, bool) {
+	if err := c.ShouldBindQuery(obj); err != nil {
+		errorTrans := TranslateError(err)
+		return errorTrans, false
+	}
+	return nil, true
+}
+
+func BindQueryAndValidateAll(c *gin.Context, obj interface{}) (string, bool) {
+	if err := c.ShouldBindQuery(obj); err != nil {
+		errorTrans := TranslateError(err)
+		return strings.Join(errorTrans, ","), false
+	}
+	return "", true
 }
 
 func TranslateError(err error) []string {

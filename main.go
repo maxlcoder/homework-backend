@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/maxlcoder/homework-backend/app/middleware"
 	"github.com/maxlcoder/homework-backend/app/route"
 	"github.com/maxlcoder/homework-backend/pkg/database"
 	"github.com/maxlcoder/homework-backend/pkg/validator"
@@ -39,7 +40,7 @@ func setupRouter() *gin.Engine {
 		c.String(http.StatusOK, "pong")
 	})
 	// 全局中间件
-	// TODO r.Use()
+	r.Use(middleware.ErrorHandler())
 	route.ApiRoutes(r)
 
 	return r

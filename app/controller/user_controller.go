@@ -2,9 +2,8 @@ package controller
 
 import (
 	"fmt"
-	"log"
+	"net/http"
 
-	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 	request "github.com/maxlcoder/homework-backend/app/request/user"
@@ -58,12 +57,13 @@ func (controller *UserController) Register(c *gin.Context) {
 }
 
 func (controller *UserController) Me(c *gin.Context) {
-	claims := jwt.ExtractClaims(c)
 	user, _ := c.Get("id")
-	log.Default().Println(claims)
-	log.Default().Println(user)
-	//c.JSON(200, gin.H{
-	//	"userID":   claims["id"].(uint),
-	//	"userName": user.(*model.User).Name,
-	//})
+	userModel := user.(*model.User)
+
+	user, err := controller.userService.GetById(userModel.ID)
+	if err != nil {
+		controller.Error(c, http.StatusUnauthorized, "获取用户信息失败: "+err.Error())
+	}
+	userResponse := response.ToUserResponse(user)
+	controller.Success(c, userResponse)
 }
