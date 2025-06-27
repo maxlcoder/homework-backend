@@ -6,22 +6,20 @@ import (
 	"gorm.io/gorm"
 )
 
-var Enforcer *casbin.Enforcer
-
 // 初始化 casbin
-func InitCasbin(db *gorm.DB) error {
-	adapter, err := gormadapter.NewAdapterByDB(db)
+func NewCasbin(db *gorm.DB) (*casbin.Enforcer, error) {
+	// 初始化 casbin 相关表
+	adapter, err := gormadapter.NewAdapterByDBUseTableName(db, "", "casbin_rule")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	enforcer, err := casbin.NewEnforcer("./casbin_model.conf", adapter)
+	enforcer, err := casbin.NewEnforcer("config/rbac_model.conf", adapter)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = enforcer.LoadPolicy()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	Enforcer = enforcer
-	return nil
+	return enforcer, nil
 }

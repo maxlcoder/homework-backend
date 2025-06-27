@@ -1,11 +1,13 @@
 package route
 
 import (
+	"fmt"
 	"log"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/controller"
+	"github.com/maxlcoder/homework-backend/app/middleware"
 	"github.com/maxlcoder/homework-backend/app/route/auth"
 	"github.com/maxlcoder/homework-backend/pkg/database"
 	"github.com/maxlcoder/homework-backend/repository"
@@ -36,6 +38,15 @@ func ApiRoutes(r *gin.Engine) {
 	initService()
 	initController()
 
+	// casbin 初始化
+	enforcer, err := service.NewCasbin(database.DB)
+	if err != nil {
+		panic(fmt.Errorf("Casbin 初始化失败: %s \n", err))
+	}
+	// 列举 casbin policy
+	//actions, err := enforcer.GetAllActions()
+	//log.Print(actions)
+
 	// auth 中间件
 	authMiddleware, err := jwt.New(auth.InitJwtParams())
 	if err != nil {
@@ -59,6 +70,7 @@ func ApiRoutes(r *gin.Engine) {
 	adminApi := r.Group("/admin")
 	RegisterAdminRoute(adminApi, adminController, adminAuthMiddleware)
 	adminApi.Use(adminAuthMiddleware.MiddlewareFunc())
+	adminApi.Use(middleware.CasbinMiddleware(enforcer))
 	RegisterAdminAuthRoute(adminApi, adminController)
 }
 

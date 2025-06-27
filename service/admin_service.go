@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
@@ -23,7 +22,6 @@ func (u *AdminService) Create(admin *model.Admin) (*model.Admin, error) {
 	userFiler := model.UserFilter{
 		Name: &admin.Name,
 	}
-	log.Default().Println(admin.Name)
 	findUser, _ := u.AdminRepository.FindBy(userFiler)
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")

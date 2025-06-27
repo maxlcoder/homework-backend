@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/maxlcoder/homework-backend/model"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -33,10 +34,10 @@ func InitDB() error {
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	//err = model.AutoMigrate(db)
-	//if err != nil {
-	//	return fmt.Errorf("数据库迁移失败：%w", err)
-	//}
+	err = model.AutoMigrate(db)
+	if err != nil {
+		return fmt.Errorf("数据库迁移失败：%w", err)
+	}
 
 	return nil
 }

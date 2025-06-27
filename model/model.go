@@ -1,9 +1,23 @@
 package model
 
 import (
+	"time"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+type Model struct {
+	ID        uint `gorm:"primaryKey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+type ModelCreatedAtUpdatedAt struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
 
 type PaginationQuery struct {
 	Page    int `form:"page" binding:"min=1"`
@@ -29,7 +43,11 @@ func Models() []interface{} {
 	return []interface{}{
 		&User{},
 		&Admin{},
-		&Casbin{},
+		&Menu{},
+		&MenuPermission{},
+		&Permission{},
+		&Role{},
+		&AdminRole{},
 	}
 }
 

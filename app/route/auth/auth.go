@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"reflect"
@@ -12,6 +13,7 @@ import (
 	"github.com/maxlcoder/homework-backend/pkg/database"
 	"github.com/maxlcoder/homework-backend/pkg/response"
 	"github.com/maxlcoder/homework-backend/repository"
+	"gorm.io/gorm"
 )
 
 var (
@@ -106,9 +108,6 @@ func authenticator[T any, PT interface {
 		}
 		userID := loginVals.Name
 		password := loginVals.Password
-		log.Println("login", userID)
-		tType := reflect.TypeOf(new(T)).Elem().Name()
-		log.Println("tType", tType)
 		query := database.DB.Model(new(T)).Where("name = ?", userID)
 		user, err := repository.First[T, PT](query)
 		if err != nil {
@@ -167,10 +166,26 @@ func identityHandler() func(c *gin.Context) interface{} {
 		userId := uint(userIdFloat)
 		switch userType {
 		case "User":
+			// 设置全局 user_id
+			c.Set("user_id", userId)
 			return &model.User{
 				ID: userId,
 			}
 		case "Admin":
+			// 设置全局 admin_id
+			c.Set("admin_id", userId)
+			// 获取管理员角色
+			var adminRole model.AdminRole
+			err := database.DB.Model(&model.AdminRole{}).Where("admin_id = ?", userId).First(&adminRole).Error
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				c.Set("admin_role_id", adminRole.RoleId)
+				var role model.Role
+				err := database.DB.Model(&role).Where("id = ?", adminRole.RoleId).First(&role).Error
+				if !errors.Is(err, gorm.ErrRecordNotFound) {
+					c.Set("admin_role_name", role.Name)
+				}
+			}
+
 			return &model.Admin{
 				ID: userId,
 			}

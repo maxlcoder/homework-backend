@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -34,7 +33,6 @@ func (controller *AdminUserController) Page(c *gin.Context) {
 	}
 	_ = c.ShouldBindJSON(&userFilter)
 	total, users, err := controller.userService.GetPageByFilter(userFilter, paginationQuery)
-	log.Println(total, users)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 		return
