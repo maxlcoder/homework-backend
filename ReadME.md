@@ -21,7 +21,22 @@
    > 使用 gorm
  * 权限校验 
    > 使用 casbin 作为 rbac 形式的权限校验，同时补充 menu，permission 相关表来做菜单业务权限控制
-   > vo -> 角色 v1-> object v2-> action  这个顺序和 casbin 配置设置的 `r = sub, obj, act` 对应
+   > vo -> 角色 v1-> object v2-> action  这个顺序和 casbin 配置设置的 `r = sub, obj, act` 对应。
+   
+   * 权限分配
+     > 设计 `menu` ，`menu_permission` ，`permission` 表进行菜单和权限的管理
+     > 
+     > 设计 `role` ， `role_menu` ， `role_permission` 表进行角色菜单和角色权限的分配，**其中角色在菜单和权限的对应关系表现上分别对应可视界面和接口 API 的允许范围**
+     > 
+     > 设计 `admin_role` 进行管理员角色分配，支持一个管理员多种角色场景
+
+
+#### 全局变量
+
+* 请求临时中间的全局变量统一采用 `c.Set` 进行设置，每一个请求单独设置  
+
+- [ ] 用户全局变量缓存，避免每个请求重复请求数据库来获取用户信息
+- [ ] -
 
 #### 路由
  * 路由分组
