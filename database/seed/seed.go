@@ -29,7 +29,7 @@ func InitSeed(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) error {
 		return err
 	}
 	// 权限初始化，将全部 /admin 开头的路由转移到 permission 表
-	if err := seedPermissions(db, r); err != nil {
+	if err := seedPermissions(db, r, enforcer); err != nil {
 		return err
 	}
 	// 菜单初始化，将菜单权限数组中的内容同步到 menu 和 menu_permission 表
@@ -37,7 +37,7 @@ func InitSeed(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) error {
 		return err
 	}
 
-	// 将超管角色与菜单权限等关联，并补充 casbin 记录
+	// 将超管角色与菜单权限等关联
 	if err := seedRoleMenuPermissions(db, enforcer); err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func seedSuperAdminRole(db *gorm.DB) error {
 }
 
 // 路由权限
-func seedPermissions(db *gorm.DB, r *gin.Engine) error {
+func seedPermissions(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) error {
 	// 检查相关表是否存在
 	has := db.Migrator().HasTable(&model.Permission{})
 	if !has {
@@ -123,6 +123,17 @@ func seedPermissions(db *gorm.DB, r *gin.Engine) error {
 			db.Create(&permission)
 		}
 		permissionIds = append(permissionIds, permission.ID)
+
+		// 补充 casbin 中 p 规则，给角色赋权
+		enforcer.AddPermissionForUser("role_super_admin", "1", permission.PATH, permission.Method)
+	}
+
+	// 找出需要删除的 permission ，删除 casbin 中对应的 p 规则
+	var deletePermissions []model.Permission
+	db.Where("id NOT IN ?", permissionIds).Find(&deletePermissions)
+
+	for _, permission := range deletePermissions {
+		enforcer.DeletePermission("1", permission.PATH, permission.Method)
 	}
 
 	// 删除非现有权限相关关联，默认不存在一个权限没有的情况
@@ -243,9 +254,6 @@ func seedRoleMenuPermissions(db *gorm.DB, enforcer *casbin.Enforcer) error {
 			roleMenu.MenuID = menu.ID
 			db.Create(&roleMenu)
 		}
-
-		// casbin police 添加
-
 	}
 
 	// 超管角色与全部权限关联
