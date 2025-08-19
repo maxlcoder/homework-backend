@@ -5,13 +5,11 @@ import (
 )
 
 type User struct {
-	ID        uint
-	Name      string    `gorm:"size:30,unique;not null;default:''"`
-	Email     string    `gorm:"size:60,unique;not null;default:''"`
-	Age       uint8     `gorm:"not null;default:0"`
-	Password  string    `gorm:"size:100;not null;default:''"`
-	CreatedAt time.Time `gorm:"not null;autoCreateTime"`
-	UpdatedAt time.Time `gorm:"not null;autoUpdateTime"`
+	BaseModel
+	Name     string `gorm:"size:30,unique;not null;default:''"`
+	Email    string `gorm:"size:60,unique;not null;default:''"`
+	Age      uint8  `gorm:"not null;default:0"`
+	Password string `gorm:"size:100;not null;default:''"`
 }
 
 type UserFilter struct {

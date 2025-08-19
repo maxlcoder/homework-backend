@@ -11,4 +11,5 @@ type ApiControllers struct {
 type AdminControllers struct {
 	UserController  *controller.AdminUserController
 	AdminController *controller.AdminController
+	RoleController  *controller.RoleController
 }

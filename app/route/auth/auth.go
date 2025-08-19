@@ -9,10 +9,11 @@ import (
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/maxlcoder/homework-backend/database"
 	"github.com/maxlcoder/homework-backend/model"
-	"github.com/maxlcoder/homework-backend/pkg/database"
 	"github.com/maxlcoder/homework-backend/pkg/response"
 	"github.com/maxlcoder/homework-backend/repository"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
@@ -61,10 +62,15 @@ func InitJwtParams() *jwt.GinJWTMiddleware {
 }
 
 func InitAdminJwtParams() *jwt.GinJWTMiddleware {
+	// 获取 jwt 过期时间配置
+	timeout := viper.GetDuration("jwt.timeout")
+	if timeout == 0 {
+		timeout = time.Hour
+	}
 	return &jwt.GinJWTMiddleware{
 		Realm:       "Homework",
 		Key:         []byte("secret key"),
-		Timeout:     time.Hour,
+		Timeout:     timeout,
 		MaxRefresh:  time.Hour,
 		IdentityKey: identityKey,
 		PayloadFunc: payloadFunc[model.Admin, *model.Admin](),
@@ -168,9 +174,9 @@ func identityHandler() func(c *gin.Context) interface{} {
 		case "User":
 			// 设置全局 user_id
 			c.Set("user_id", userId)
-			return &model.User{
-				ID: userId,
-			}
+			var user model.User
+			user.ID = userId
+			return &user
 		case "Admin":
 			// 设置全局 admin_id
 			c.Set("admin_id", userId)
@@ -185,10 +191,9 @@ func identityHandler() func(c *gin.Context) interface{} {
 					c.Set("admin_role_name", role.Name)
 				}
 			}
-
-			return &model.Admin{
-				ID: userId,
-			}
+			var admin model.Admin
+			admin.ID = userId
+			return &admin
 		}
 		return nil
 	}

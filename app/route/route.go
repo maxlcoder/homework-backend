@@ -1,15 +1,15 @@
 package route
 
 import (
-	"fmt"
 	"log"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
+	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/controller"
 	"github.com/maxlcoder/homework-backend/app/middleware"
 	"github.com/maxlcoder/homework-backend/app/route/auth"
-	"github.com/maxlcoder/homework-backend/pkg/database"
+	"github.com/maxlcoder/homework-backend/database"
 	"github.com/maxlcoder/homework-backend/repository"
 	"github.com/maxlcoder/homework-backend/service"
 )
@@ -18,12 +18,14 @@ import (
 var (
 	userRepository  repository.UserRepository
 	adminRepository repository.AdminRepository
+	roleRepository  repository.RoleRepository
 )
 
 // service 列表
 var (
 	userService  *service.UserService
 	adminService *service.AdminService
+	roleService  *service.RoleService
 )
 
 var (
@@ -31,21 +33,12 @@ var (
 	adminController *AdminControllers
 )
 
-func ApiRoutes(r *gin.Engine) {
+func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 
 	// 注册中间件
 	initRepository()
 	initService()
 	initController()
-
-	// casbin 初始化
-	enforcer, err := service.NewCasbin(database.DB)
-	if err != nil {
-		panic(fmt.Errorf("Casbin 初始化失败: %s \n", err))
-	}
-	// 列举 casbin policy
-	//actions, err := enforcer.GetAllActions()
-	//log.Print(actions)
 
 	// auth 中间件
 	authMiddleware, err := jwt.New(auth.InitJwtParams())
@@ -78,6 +71,7 @@ func ApiRoutes(r *gin.Engine) {
 func initRepository() {
 	userRepository = repository.NewUserRepository(database.DB)
 	adminRepository = repository.NewAdminRepository(database.DB)
+	roleRepository = repository.NewRoleRepository(database.DB)
 }
 
 // service 初始化
@@ -88,6 +82,9 @@ func initService() {
 	adminService = &service.AdminService{
 		AdminRepository: adminRepository,
 	}
+	roleService = &service.RoleService{
+		RoleRepository: roleRepository,
+	}
 }
 
 func initController() {
@@ -97,5 +94,6 @@ func initController() {
 	adminController = &AdminControllers{
 		UserController:  controller.NewAdminUserController(adminService, userService),
 		AdminController: controller.NewAdminController(adminService),
+		RoleController:  controller.NewRoleController(roleService),
 	}
 }

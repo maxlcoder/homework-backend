@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
@@ -59,12 +60,13 @@ func (u *AdminService) GetById(id uint) (*model.Admin, error) {
 	return user, nil
 }
 
-func (u AdminService) GetByObject() {
+func (u *AdminService) GetByObject() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (u AdminService) GetPageByFilter(modelFilter model.UserFilter, paginationQuery model.PaginationQuery) (int64, []model.Admin, error) {
+func (u *AdminService) GetPageByFilter(modelFilter model.UserFilter, paginationQuery model.PaginationQuery) (int64, []model.Admin, error) {
+	log.Println("进入查询")
 	total, users, err := u.AdminRepository.Paginate(modelFilter, paginationQuery)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)

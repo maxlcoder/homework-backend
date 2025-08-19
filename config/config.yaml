@@ -1,3 +1,9 @@
 database:
   mysql:
     dsn: root:root@tcp(127.0.0.1:3306)/homework?charset=utf8mb4&parseTime=True&loc=Local
+
+jwt:
+  timeout: 86400s
+
+
+default_password: Admin@123

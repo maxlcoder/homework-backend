@@ -7,16 +7,20 @@ import (
 	"gorm.io/gorm"
 )
 
-type Model struct {
-	ID        uint `gorm:"primaryKey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+type BaseModel struct {
+	ID        uint
+	CreatedAt time.Time `gorm:"not null;autoCreateTime;comment:创建时间"`
+	UpdatedAt time.Time `gorm:"not null;autoUpdateTime;comment:更新时间"`
+}
+
+type BaseTenantModel struct {
+	BaseModel
+	TenantID uint `gorm:"not null;default:0;comment:租户 ID"`
 }
 
 type ModelCreatedAtUpdatedAt struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `gorm:"not null;autoCreateTime;comment:创建时间"`
+	UpdatedAt time.Time `gorm:"not null;autoUpdateTime;comment:创建时间"`
 }
 
 type PaginationQuery struct {
@@ -48,6 +52,8 @@ func Models() []interface{} {
 		&Permission{},
 		&Role{},
 		&AdminRole{},
+		&RoleMenu{},
+		&RolePermission{},
 	}
 }
 

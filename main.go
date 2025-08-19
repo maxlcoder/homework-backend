@@ -7,8 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/middleware"
 	"github.com/maxlcoder/homework-backend/app/route"
-	"github.com/maxlcoder/homework-backend/pkg/database"
+	"github.com/maxlcoder/homework-backend/database"
+	"github.com/maxlcoder/homework-backend/database/seed"
 	"github.com/maxlcoder/homework-backend/pkg/validator"
+	"github.com/maxlcoder/homework-backend/service"
 	"github.com/spf13/viper"
 )
 
@@ -28,6 +30,12 @@ func setupRouter() *gin.Engine {
 		panic(fmt.Errorf("数据库连接初始化失败：%s \n", err))
 	}
 
+	// casbin 初始化
+	enforcer, err := service.NewCasbin(database.DB)
+	if err != nil {
+		panic(fmt.Errorf("Casbin 初始化失败: %s \n", err))
+	}
+
 	// 参数校验翻译
 	validator.InitValidator()
 
@@ -35,13 +43,21 @@ func setupRouter() *gin.Engine {
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
+	// 替换 Gin JSON 渲染器
+	//r.JSON = jsoniter.ConfigCompatibleWithStandardLibrary
+
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
 	// 全局中间件
 	r.Use(middleware.ErrorHandler())
-	route.ApiRoutes(r)
+	route.ApiRoutes(r, enforcer)
+
+	err = seed.InitSeed(database.DB, r, enforcer)
+	if err != nil {
+		panic(fmt.Errorf("数据库初始化失败：%s \n", err))
+	}
 
 	return r
 }

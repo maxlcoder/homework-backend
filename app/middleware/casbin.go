@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/casbin/casbin/v2"
@@ -25,12 +26,13 @@ func CasbinMiddleware(e *casbin.Enforcer) gin.HandlerFunc {
 		if !ok {
 			adminRoleNameStr = ""
 		}
-		ok, err := e.Enforce("role_"+adminRoleNameStr, path, method)
+		ok, err := e.Enforce(adminRoleNameStr, "1", path, method)
 		if err != nil {
 			response.Error(c, http.StatusInternalServerError, err.Error())
 			c.Abort()
 			return
 		}
+		log.Println(ok)
 		if !ok {
 			response.Error(c, http.StatusForbidden, "权限不足")
 			c.Abort()
