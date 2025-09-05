@@ -14,32 +14,33 @@ import (
 type MenuController struct {
 	BaseController
 	// 集成服务
-	menuService service.RoleServiceInterface
+	menuService service.MenuServiceInterface
 }
 
-func NewMenuController(roleService service.RoleServiceInterface) *RoleController {
-	return &RoleController{
-		roleService: roleService,
+func NewMenuController(menuService service.MenuServiceInterface) *MenuController {
+	return &MenuController{
+		menuService: menuService,
 	}
 }
 
-func (controller *RoleController) Page(c *gin.Context) {
-	var paginationQuery model.PaginationQuery
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &paginationQuery); !ok {
+func (controller *MenuController) Page(c *gin.Context) {
+	var pagination model.Pagination
+	var filter model.MenuFilter
+	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
 	}
 	_ = c.ShouldBindJSON(&filter)
-	total, roles, err := controller.roleService.GetPageByFilter(filter, paginationQuery)
+
+	total, roles, err := controller.menuService.GetPageByFilter(filter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
 	var pageResponse response.PageResponse[response.RoleResponse]
 	pageResponse.Total = total
-	pageResponse.Page = paginationQuery.Page
-	pageResponse.PerPage = paginationQuery.PerPage
+	pageResponse.Page = pagination.Page
+	pageResponse.PerPage = pagination.PerPage
 	var roleResponses []response.RoleResponse
 	err = copier.Copy(&roleResponses, &roles)
 	if err != nil {
@@ -51,23 +52,23 @@ func (controller *RoleController) Page(c *gin.Context) {
 
 }
 
-func (controller *RoleController) Store(c *gin.Context) {
-	var paginationQuery model.PaginationQuery
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &paginationQuery); !ok {
+func (controller *MenuController) Store(c *gin.Context) {
+	var pagination model.Pagination
+	var filter model.MenuFilter
+	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
 	}
 	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.roleService.GetPageByFilter(filter, paginationQuery)
+	total, users, err := controller.menuService.GetPageByFilter(filter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
 	var pageResponse response.PageResponse[response.UserResponse]
 	pageResponse.Total = total
-	pageResponse.Page = paginationQuery.Page
-	pageResponse.PerPage = paginationQuery.PerPage
+	pageResponse.Page = pagination.Page
+	pageResponse.PerPage = pagination.PerPage
 	var userResponses []response.UserResponse
 	for _, user := range users {
 		userResponses = append(userResponses, response.ToUserResponse(user))
@@ -77,50 +78,23 @@ func (controller *RoleController) Store(c *gin.Context) {
 	controller.Success(c, pageResponse)
 
 }
-func (controller *RoleController) Update(c *gin.Context) {
-	var paginationQuery model.PaginationQuery
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &paginationQuery); !ok {
+func (controller *MenuController) Update(c *gin.Context) {
+	var pagination model.Pagination
+	var filter model.MenuFilter
+	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
 	}
 	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.roleService.GetPageByFilter(filter, paginationQuery)
+	total, users, err := controller.menuService.GetPageByFilter(filter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
 	var pageResponse response.PageResponse[response.UserResponse]
 	pageResponse.Total = total
-	pageResponse.Page = paginationQuery.Page
-	pageResponse.PerPage = paginationQuery.PerPage
-	var userResponses []response.UserResponse
-	for _, user := range users {
-		userResponses = append(userResponses, response.ToUserResponse(user))
-	}
-	pageResponse.Data = userResponses
-
-	controller.Success(c, pageResponse)
-
-}
-
-func (controller *RoleController) Destroy(c *gin.Context) {
-	var paginationQuery model.PaginationQuery
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &paginationQuery); !ok {
-		controller.Error(c, http.StatusBadRequest, err)
-		return
-	}
-	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.roleService.GetPageByFilter(filter, paginationQuery)
-	if err != nil {
-		controller.Error(c, http.StatusBadRequest, err.Error())
-	}
-
-	var pageResponse response.PageResponse[response.UserResponse]
-	pageResponse.Total = total
-	pageResponse.Page = paginationQuery.Page
-	pageResponse.PerPage = paginationQuery.PerPage
+	pageResponse.Page = pagination.Page
+	pageResponse.PerPage = pagination.PerPage
 	var userResponses []response.UserResponse
 	for _, user := range users {
 		userResponses = append(userResponses, response.ToUserResponse(user))
@@ -131,23 +105,50 @@ func (controller *RoleController) Destroy(c *gin.Context) {
 
 }
 
-func (controller *RoleController) Show(c *gin.Context) {
-	var paginationQuery model.PaginationQuery
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &paginationQuery); !ok {
+func (controller *MenuController) Destroy(c *gin.Context) {
+	var pagination model.Pagination
+	var filter model.MenuFilter
+	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
 	}
 	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.roleService.GetPageByFilter(filter, paginationQuery)
+	total, users, err := controller.menuService.GetPageByFilter(filter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
 	var pageResponse response.PageResponse[response.UserResponse]
 	pageResponse.Total = total
-	pageResponse.Page = paginationQuery.Page
-	pageResponse.PerPage = paginationQuery.PerPage
+	pageResponse.Page = pagination.Page
+	pageResponse.PerPage = pagination.PerPage
+	var userResponses []response.UserResponse
+	for _, user := range users {
+		userResponses = append(userResponses, response.ToUserResponse(user))
+	}
+	pageResponse.Data = userResponses
+
+	controller.Success(c, pageResponse)
+
+}
+
+func (controller *MenuController) Show(c *gin.Context) {
+	var pagination model.Pagination
+	var filter model.MenuFilter
+	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
+		controller.Error(c, http.StatusBadRequest, err)
+		return
+	}
+	_ = c.ShouldBindJSON(&filter)
+	total, users, err := controller.menuService.GetPageByFilter(filter, pagination)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+	}
+
+	var pageResponse response.PageResponse[response.UserResponse]
+	pageResponse.Total = total
+	pageResponse.Page = pagination.Page
+	pageResponse.PerPage = pagination.PerPage
 	var userResponses []response.UserResponse
 	for _, user := range users {
 		userResponses = append(userResponses, response.ToUserResponse(user))

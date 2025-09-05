@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
@@ -11,7 +10,7 @@ import (
 type AdminServiceInterface interface {
 	Create(admin *model.Admin) (*model.Admin, error)
 	GetById(id uint) (*model.Admin, error)
-	GetPageByFilter(modelFilter model.UserFilter, paginationQuery model.PaginationQuery) (int64, []model.Admin, error)
+	GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.Admin, error)
 }
 
 type AdminService struct {
@@ -23,7 +22,10 @@ func (u *AdminService) Create(admin *model.Admin) (*model.Admin, error) {
 	userFiler := model.UserFilter{
 		Name: &admin.Name,
 	}
-	findUser, _ := u.AdminRepository.FindBy(userFiler)
+	cond := repository.StructCondition[model.UserFilter]{
+		userFiler,
+	}
+	findUser, _ := u.AdminRepository.FindBy(cond)
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
@@ -53,7 +55,10 @@ func (u *AdminService) GetById(id uint) (*model.Admin, error) {
 	userFiler := model.UserFilter{
 		ID: &id,
 	}
-	user, err := u.AdminRepository.FindBy(userFiler)
+	cond := repository.StructCondition[model.UserFilter]{
+		userFiler,
+	}
+	user, err := u.AdminRepository.FindBy(cond)
 	if err != nil {
 		return nil, err
 	}
@@ -65,9 +70,12 @@ func (u *AdminService) GetByObject() {
 	panic("implement me")
 }
 
-func (u *AdminService) GetPageByFilter(modelFilter model.UserFilter, paginationQuery model.PaginationQuery) (int64, []model.Admin, error) {
-	log.Println("进入查询")
-	total, users, err := u.AdminRepository.Paginate(modelFilter, paginationQuery)
+func (u *AdminService) GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.Admin, error) {
+
+	cond := repository.StructCondition[model.UserFilter]{
+		modelFilter,
+	}
+	total, users, err := u.AdminRepository.Page(cond, pagination)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
 	}

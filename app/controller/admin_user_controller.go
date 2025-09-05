@@ -25,14 +25,14 @@ func NewAdminUserController(adminService service.AdminServiceInterface, userServ
 }
 
 func (controller *AdminUserController) Page(c *gin.Context) {
-	var paginationQuery model.PaginationQuery
+	var pagination model.Pagination
 	var userFilter model.UserFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &paginationQuery); !ok {
+	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
 	}
 	_ = c.ShouldBindJSON(&userFilter)
-	total, users, err := controller.userService.GetPageByFilter(userFilter, paginationQuery)
+	total, users, err := controller.userService.GetPageByFilter(userFilter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -40,8 +40,8 @@ func (controller *AdminUserController) Page(c *gin.Context) {
 
 	var pageResponse response.PageResponse[response.UserResponse]
 	pageResponse.Total = total
-	pageResponse.Page = paginationQuery.Page
-	pageResponse.PerPage = paginationQuery.PerPage
+	pageResponse.Page = pagination.Page
+	pageResponse.PerPage = pagination.PerPage
 	var userResponses []response.UserResponse
 	for _, user := range users {
 		userResponses = append(userResponses, response.ToUserResponse(user))

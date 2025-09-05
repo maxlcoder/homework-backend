@@ -5,12 +5,13 @@ import (
 
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
+	"gorm.io/gorm"
 )
 
 type RoleServiceInterface interface {
 	Create(role *model.Role) (*model.Role, error)
 	GetById(id uint) (*model.Role, error)
-	GetPageByFilter(modelFilter model.RoleFilter, paginationQuery model.PaginationQuery) (int64, []model.Role, error)
+	GetPageByFilter(modelFilter model.RoleFilter, pagination model.Pagination) (int64, []model.Role, error)
 }
 
 type RoleService struct {
@@ -22,7 +23,12 @@ func (u *RoleService) Create(role *model.Role) (*model.Role, error) {
 	filter := model.RoleFilter{
 		Name: &role.Name,
 	}
-	findUser, _ := u.RoleRepository.FindBy(filter)
+
+	cond := repository.StructCondition[model.RoleFilter]{
+		filter,
+	}
+
+	findUser, _ := u.RoleRepository.FindBy(cond)
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
@@ -52,7 +58,11 @@ func (u *RoleService) GetById(id uint) (*model.Role, error) {
 	filter := model.RoleFilter{
 		ID: &id,
 	}
-	user, err := u.RoleRepository.FindBy(filter)
+
+	cond := repository.StructCondition[model.RoleFilter]{
+		filter,
+	}
+	user, err := u.RoleRepository.FindBy(cond)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +74,17 @@ func (u *RoleService) GetByObject() {
 	panic("implement me")
 }
 
-func (u *RoleService) GetPageByFilter(modelFilter model.RoleFilter, paginationQuery model.PaginationQuery) (int64, []model.Role, error) {
-	total, users, err := u.RoleRepository.Paginate(modelFilter, paginationQuery)
+func (u *RoleService) GetPageByFilter(modelFilter model.RoleFilter, pagination model.Pagination) (int64, []model.Role, error) {
+
+	cond := repository.FuncCondition[model.RoleFilter]{
+		func(db *gorm.DB) *gorm.DB {
+			if modelFilter.Name != nil {
+				db.Where("name like ?", "%"+*modelFilter.Name+"%")
+			}
+			return db
+		},
+	}
+	total, users, err := u.RoleRepository.Page(cond, pagination)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
 	}

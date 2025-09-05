@@ -49,10 +49,19 @@ func (r *BaseRepository[T]) Page(cond QueryCondition[T], pagination model.Pagina
 		return 0, nil, err
 	}
 	// 分页查询
-	if err := r.db.Offset((pagination.Page - 1) * pagination.PerPage).
+	if err := query.Offset((pagination.Page - 1) * pagination.PerPage).
 		Limit(pagination.PerPage).
 		Find(&entities).Error; err != nil {
 		return 0, nil, err
 	}
 	return total, entities, nil
+}
+
+func (r *BaseRepository[T]) FindBy(cond QueryCondition[T]) (*T, error) {
+	var entity T
+	query := cond.Apply(r.db.Model(&entity))
+	if err := query.First(&entity).Error; err != nil {
+		return nil, err
+	}
+	return &entity, nil
 }

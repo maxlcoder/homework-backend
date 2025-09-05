@@ -8,66 +8,77 @@ import (
 )
 
 type MenuServiceInterface interface {
-	Create(role *model.Role) (*model.Role, error)
-	GetById(id uint) (*model.Role, error)
-	GetPageByFilter(modelFilter model.RoleFilter, paginationQuery model.PaginationQuery) (int64, []model.Role, error)
+	Create(menu *model.Menu) (*model.Menu, error)
+	GetById(id uint) (*model.Menu, error)
+	GetPageByFilter(modelFilter model.MenuFilter, pagination model.Pagination) (int64, []model.Menu, error)
 }
 
 type MenuService struct {
 	MenuRepository repository.MenuRepository
 }
 
-func (u *RoleService) Create(role *model.Role) (*model.Role, error) {
+func (u *MenuService) Create(menu *model.Menu) (*model.Menu, error) {
 	// 判断是否存在已经适用的名称
-	filter := model.RoleFilter{
-		Name: &role.Name,
+	filter := model.MenuFilter{
+		Name: &menu.Name,
 	}
-	findUser, _ := u.RoleRepository.FindBy(filter)
+	cond := repository.StructCondition[model.MenuFilter]{
+		filter,
+	}
+	findUser, _ := u.MenuRepository.FindBy(cond)
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
-	err := u.RoleRepository.Create(role)
+	err := u.MenuRepository.Create(menu)
 	if err != nil {
 		return nil, fmt.Errorf("用户创建失败: %w", err)
 	}
-	return role, nil
+	return menu, nil
 }
 
-func (u *RoleService) Update() {
+func (u *MenuService) Update() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (u *RoleService) Delete() {
+func (u *MenuService) Delete() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (u *RoleService) List() {
+func (u *MenuService) List() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (u *RoleService) GetById(id uint) (*model.Role, error) {
-	filter := model.RoleFilter{
+func (u *MenuService) GetById(id uint) (*model.Menu, error) {
+	filter := model.MenuFilter{
 		ID: &id,
 	}
-	user, err := u.RoleRepository.FindBy(filter)
+	cond := repository.StructCondition[model.MenuFilter]{
+		filter,
+	}
+	user, err := u.MenuRepository.FindBy(cond)
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (u *RoleService) GetByObject() {
+func (u *MenuService) GetByObject() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (u *RoleService) GetPageByFilter(modelFilter model.RoleFilter, paginationQuery model.PaginationQuery) (int64, []model.Role, error) {
-	total, users, err := u.RoleRepository.Paginate(modelFilter, paginationQuery)
+func (u *MenuService) GetPageByFilter(modelFilter model.MenuFilter, pagination model.Pagination) (int64, []model.Menu, error) {
+
+	cond := repository.StructCondition[model.MenuFilter]{
+		modelFilter,
+	}
+
+	total, menus, err := u.MenuRepository.Page(cond, pagination)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
 	}
-	return total, users, nil
+	return total, menus, nil
 }
