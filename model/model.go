@@ -23,7 +23,7 @@ type ModelCreatedAtUpdatedAt struct {
 	UpdatedAt time.Time `gorm:"not null;autoUpdateTime;comment:创建时间"`
 }
 
-type PaginationQuery struct {
+type Pagination struct {
 	Page    int `form:"page" binding:"min=1"`
 	PerPage int `form:"per_page" binding:"min=1,max=100"`
 }
