@@ -12,8 +12,8 @@ func RegisterAdminRoute(r *gin.RouterGroup, ctrl *AdminControllers, handle *jwt.
 }
 
 func RegisterAdminAuthRoute(r *gin.RouterGroup, ctrl *AdminControllers) {
-	r.GET("users", ctrl.UserController.Page) // 用户列表
-	//r.GET("admins", ctrl.AdminController.Page) // 管理员列表
+	r.GET("users", ctrl.UserController.Page)   // 用户列表
+	r.GET("admins", ctrl.AdminController.Page) // 管理员列表
 
 	r.GET("roles", ctrl.RoleController.Page)       // 角色分页列表
 	r.POST("roles", ctrl.RoleController.Store)     // 角色分页列表

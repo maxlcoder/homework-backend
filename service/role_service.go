@@ -25,7 +25,7 @@ func (u *RoleService) Create(role *model.Role) (*model.Role, error) {
 	}
 
 	cond := repository.StructCondition[model.RoleFilter]{
-		filter,
+		Cond: filter,
 	}
 
 	findUser, _ := u.RoleRepository.FindBy(cond)
@@ -60,7 +60,7 @@ func (u *RoleService) GetById(id uint) (*model.Role, error) {
 	}
 
 	cond := repository.StructCondition[model.RoleFilter]{
-		filter,
+		Cond: filter,
 	}
 	user, err := u.RoleRepository.FindBy(cond)
 	if err != nil {

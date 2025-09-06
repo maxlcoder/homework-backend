@@ -64,26 +64,26 @@ func (controller *AdminController) Me(c *gin.Context) {
 
 func (controller *AdminController) Page(c *gin.Context) {
 	var pagination model.Pagination
-	var userFilter model.UserFilter
+	var filter model.AdminFilter
 	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
 	}
-	_ = c.ShouldBindJSON(&userFilter)
-	total, users, err := controller.adminService.GetPageByFilter(userFilter, pagination)
+	_ = c.ShouldBindJSON(&filter)
+	total, users, err := controller.adminService.GetPageByFilter(filter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	var pageResponse response.PageResponse[response.UserResponse]
+	var pageResponse response.PageResponse[response.AdminResponse]
 	pageResponse.Total = total
 	pageResponse.Page = pagination.Page
 	pageResponse.PerPage = pagination.PerPage
-	var userResponses []response.UserResponse
+	var adminResponses []response.AdminResponse
 	for _, user := range users {
-		userResponses = append(userResponses, response.ToUserResponse(user))
+		adminResponses = append(adminResponses, response.ToAdminResponse(user))
 	}
-	pageResponse.Data = userResponses
+	pageResponse.Data = adminResponses
 
 	controller.Success(c, pageResponse)
 

@@ -6,10 +6,11 @@ import (
 
 type Admin struct {
 	BaseModel
-	Name     string `gorm:"size:30;not null;default:''"`
-	Email    string `gorm:"size:60;not null;default:''"`
-	Age      uint8  `gorm:"not null;default:0"`
-	Password string `gorm:"size:100;not null;default:''"`
+	Name     string  `gorm:"size:30;not null;default:''"`
+	Email    string  `gorm:"size:60;not null;default:''"`
+	Age      uint8   `gorm:"not null;default:0"`
+	Password string  `gorm:"size:100;not null;default:''"`
+	Roles    []*Role `gorm:"many2many:admin_roles;"`
 }
 
 type AdminRole struct {

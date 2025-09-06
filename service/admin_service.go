@@ -10,7 +10,7 @@ import (
 type AdminServiceInterface interface {
 	Create(admin *model.Admin) (*model.Admin, error)
 	GetById(id uint) (*model.Admin, error)
-	GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.Admin, error)
+	GetPageByFilter(modelFilter model.AdminFilter, pagination model.Pagination) (int64, []model.Admin, error)
 }
 
 type AdminService struct {
@@ -23,7 +23,7 @@ func (u *AdminService) Create(admin *model.Admin) (*model.Admin, error) {
 		Name: &admin.Name,
 	}
 	cond := repository.StructCondition[model.UserFilter]{
-		userFiler,
+		Cond: userFiler,
 	}
 	findUser, _ := u.AdminRepository.FindBy(cond)
 	if findUser != nil {
@@ -56,7 +56,7 @@ func (u *AdminService) GetById(id uint) (*model.Admin, error) {
 		ID: &id,
 	}
 	cond := repository.StructCondition[model.UserFilter]{
-		userFiler,
+		Cond: userFiler,
 	}
 	user, err := u.AdminRepository.FindBy(cond)
 	if err != nil {
@@ -70,10 +70,13 @@ func (u *AdminService) GetByObject() {
 	panic("implement me")
 }
 
-func (u *AdminService) GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.Admin, error) {
+func (u *AdminService) GetPageByFilter(filter model.AdminFilter, pagination model.Pagination) (int64, []model.Admin, error) {
 
-	cond := repository.StructCondition[model.UserFilter]{
-		modelFilter,
+	cond := repository.StructCondition[model.AdminFilter]{
+		Cond: filter,
+		Preloads: []string{
+			"Roles",
+		},
 	}
 	total, users, err := u.AdminRepository.Page(cond, pagination)
 	if err != nil {

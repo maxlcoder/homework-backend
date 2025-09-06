@@ -23,7 +23,7 @@ func (u *UserService) Create(user *model.User) (*model.User, error) {
 		Name: &user.Name,
 	}
 	cond := repository.StructCondition[model.UserFilter]{
-		userFiler,
+		Cond: userFiler,
 	}
 	findUser, _ := u.UserRepository.FindBy(cond)
 	if findUser != nil {
@@ -56,7 +56,7 @@ func (u *UserService) GetById(id uint) (*model.User, error) {
 		ID: &id,
 	}
 	cond := repository.StructCondition[model.UserFilter]{
-		userFiler,
+		Cond: userFiler,
 	}
 	user, err := u.UserRepository.FindBy(cond)
 	if err != nil {
@@ -72,7 +72,7 @@ func (u UserService) GetByObject() {
 
 func (u UserService) GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.User, error) {
 	cond := repository.StructCondition[model.UserFilter]{
-		modelFilter,
+		Cond: modelFilter,
 	}
 	total, users, err := u.UserRepository.Page(cond, pagination)
 	if err != nil {
