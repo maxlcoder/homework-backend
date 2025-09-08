@@ -78,9 +78,9 @@ func (u *AdminService) GetPageByFilter(filter model.AdminFilter, pagination mode
 			"Roles",
 		},
 	}
-	total, users, err := u.AdminRepository.Page(cond, pagination)
+	total, admins, err := u.AdminRepository.Page(cond, pagination)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
 	}
-	return total, users, nil
+	return total, admins, nil
 }

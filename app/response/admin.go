@@ -1,6 +1,9 @@
 package response
 
-import "github.com/jinzhu/copier"
+import (
+	"github.com/jinzhu/copier"
+	"github.com/maxlcoder/homework-backend/model"
+)
 
 type AdminResponse struct {
 	BaseResponse
@@ -10,9 +13,11 @@ type AdminResponse struct {
 	Roles []RoleResponse `json:"roles"`
 }
 
-func ToAdminResponse(T any) AdminResponse {
-	var adminResponse AdminResponse
-	copier.Copy(&adminResponse.BaseResponse, T)
-	copier.Copy(&adminResponse, T)
-	return adminResponse
+func NewAdminResponse() *AdminResponse {
+	return &AdminResponse{}
+}
+
+func (r *AdminResponse) FromModel(m model.Admin) {
+	copier.Copy(&r.BaseResponse, &m)
+	copier.Copy(r, &m)
 }

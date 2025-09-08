@@ -70,21 +70,12 @@ func (controller *AdminController) Page(c *gin.Context) {
 		return
 	}
 	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.adminService.GetPageByFilter(filter, pagination)
+	total, admins, err := controller.adminService.GetPageByFilter(filter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	var pageResponse response.PageResponse[response.AdminResponse]
-	pageResponse.Total = total
-	pageResponse.Page = pagination.Page
-	pageResponse.PerPage = pagination.PerPage
-	var adminResponses []response.AdminResponse
-	for _, user := range users {
-		adminResponses = append(adminResponses, response.ToAdminResponse(user))
-	}
-	pageResponse.Data = adminResponses
-
+	pageResponse := response.BuildPageResponse[model.Admin, *response.AdminResponse](admins, total, pagination.Page, pagination.PerPage, response.NewAdminResponse)
 	controller.Success(c, pageResponse)
 
 }
