@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	request "github.com/maxlcoder/homework-backend/app/request/user"
+	"github.com/maxlcoder/homework-backend/app/request"
 	"github.com/maxlcoder/homework-backend/app/response"
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/pkg/validator"

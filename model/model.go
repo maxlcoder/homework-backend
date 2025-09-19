@@ -13,6 +13,10 @@ type BaseModel struct {
 	UpdatedAt time.Time `gorm:"not null;autoUpdateTime;comment:更新时间"`
 }
 
+type IDModel struct {
+	ID uint
+}
+
 type BaseTenantModel struct {
 	BaseModel
 	TenantID uint `gorm:"not null;default:0;comment:租户 ID"`
@@ -24,8 +28,8 @@ type ModelCreatedAtUpdatedAt struct {
 }
 
 type Pagination struct {
-	Page    int `form:"page" binding:"min=1"`
-	PerPage int `form:"per_page" binding:"min=1,max=100"`
+	Page    int `form:"page" default:"1" binding:"omitempty,min=1" label:"页码"`
+	PerPage int `form:"per_page" default:"10" binding:"omitempty,min=1,max=100" label:"每页大小"`
 }
 
 func HashPassword(password string) (string, error) {

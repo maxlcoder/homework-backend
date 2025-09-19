@@ -17,8 +17,15 @@ func NewBaseRepository[T any](db *gorm.DB) *BaseRepository[T] {
 }
 
 // 实现基础方法
-func (r *BaseRepository[T]) Create(entity *T) error {
-	return r.db.Create(entity).Error
+func (r *BaseRepository[T]) getDB(tx *gorm.DB) *gorm.DB {
+	if tx != nil {
+		return tx
+	}
+	return r.db
+}
+
+func (r *BaseRepository[T]) Create(entity *T, tx *gorm.DB) error {
+	return r.getDB(tx).Create(entity).Error
 }
 
 func (r *BaseRepository[T]) FindById(id uint) (*T, error) {
@@ -39,10 +46,11 @@ func (r *BaseRepository[T]) DeleteById(id uint) error {
 }
 
 // 查询条件 where , 分页条件 paginationQuery
-func (r *BaseRepository[T]) Page(cond QueryCondition[T], pagination model.Pagination) (int64, []T, error) {
+func (r *BaseRepository[T]) Page(cond ConditionScope, pagination model.Pagination) (int64, []T, error) {
 	var entity T
 	var entities []T
 	var total int64 // gorm 默认总数使用 int64
+
 	query := cond.Apply(r.db.Model(&entity))
 	// 统计总数
 	if err := query.Count(&total).Error; err != nil {
@@ -64,4 +72,14 @@ func (r *BaseRepository[T]) FindBy(cond QueryCondition[T]) (*T, error) {
 		return nil, err
 	}
 	return &entity, nil
+}
+
+func (r *BaseRepository[T]) CountBy(cond ConditionScope) (int64, error) {
+	var entity T
+	var count int64
+	query := cond.Apply(r.db.Model(&entity))
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }

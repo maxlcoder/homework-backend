@@ -16,9 +16,11 @@ import (
 
 // service 列表
 var (
-	userRepository  repository.UserRepository
-	adminRepository repository.AdminRepository
-	roleRepository  repository.RoleRepository
+	userRepository     repository.UserRepository
+	adminRepository    repository.AdminRepository
+	roleRepository     repository.RoleRepository
+	menuRepository     repository.MenuRepository
+	roleMenuRepository repository.RoleMenuRepository
 )
 
 // service 列表
@@ -72,6 +74,8 @@ func initRepository() {
 	userRepository = repository.NewUserRepository(database.DB)
 	adminRepository = repository.NewAdminRepository(database.DB)
 	roleRepository = repository.NewRoleRepository(database.DB)
+	menuRepository = repository.NewMenuRepository(database.DB)
+	roleMenuRepository = repository.NewRoleMenuRepository(database.DB)
 }
 
 // service 初始化
@@ -82,9 +86,7 @@ func initService() {
 	adminService = &service.AdminService{
 		AdminRepository: adminRepository,
 	}
-	roleService = &service.RoleService{
-		RoleRepository: roleRepository,
-	}
+	roleService = service.NewRoleService(database.DB, roleRepository, menuRepository, roleMenuRepository)
 }
 
 func initController() {

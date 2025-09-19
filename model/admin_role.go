@@ -21,7 +21,7 @@ type AdminRole struct {
 
 type AdminFilter struct {
 	ID        *uint
-	Name      *string
+	Name      *string `form:"name"`
 	Email     *string
 	Age       *uint8
 	CreatedAt *time.Time

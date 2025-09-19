@@ -29,7 +29,7 @@ func (u *MenuService) Create(menu *model.Menu) (*model.Menu, error) {
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
-	err := u.MenuRepository.Create(menu)
+	err := u.MenuRepository.Create(menu, nil)
 	if err != nil {
 		return nil, fmt.Errorf("用户创建失败: %w", err)
 	}
@@ -72,8 +72,8 @@ func (u *MenuService) GetByObject() {
 
 func (u *MenuService) GetPageByFilter(modelFilter model.MenuFilter, pagination model.Pagination) (int64, []model.Menu, error) {
 
-	cond := repository.StructCondition[model.MenuFilter]{
-		Cond: modelFilter,
+	cond := repository.ConditionScope{
+		StructCond: modelFilter,
 	}
 
 	total, menus, err := u.MenuRepository.Page(cond, pagination)

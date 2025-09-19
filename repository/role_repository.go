@@ -34,3 +34,4 @@ func (r *RoleRepositoryImpl) FindByName(name string) (*model.Role, error) {
 	}
 	return &role, nil
 }
+

@@ -49,6 +49,70 @@
 #### 入参校验
  * 独立的 Request 
  * 自定义验证
+ * 入参默认值设置
+   
+    **---------注意---------**
+    >ShouldBind:   
+     如果 Content-Type=application/json → 调用 ShouldBindJSON 
+     如果 Content-Type=application/x-www-form-urlencoded → 调用 ShouldBindForm
+ 
+    >为此在入参校验中通过判断请求方式来兼容请求类型
+
+    ```aiignore
+    # 1. 默认值标签设置
+    type PageRequest struct {
+      Page     *int   `json:"page" default:"1" binding:"omitempty,gte=1"`
+      PageSize *int   `json:"page_size" default:"10" binding:"omitempty,gte=1,max=100"`
+      Name     string `json:"name" default:"guest" binding:"omitempty,min=2"`
+    }
+     
+    # 2. 使用定义全局处理默认值函数，同时兼容参数 validator 判断，并对判断结果进行中文转换
+    func BindAndSetDefaults(c *gin.Context, req interface{}) error {
+        # // 判断一下请求方式
+        ct := c.ContentType()
+        if ct == "application/json" {
+            if c.Request.Method == "GET" {
+                if err := c.ShouldBindQuery(req); err != nil {
+                    errorTrans := validator.TranslateError(err)
+                    return fmt.Errorf("%s", strings.Join(errorTrans, ","))
+    
+                }
+            }
+        } else {
+            if err := c.ShouldBind(req); err != nil {
+                errorTrans := validator.TranslateError(err)
+                return fmt.Errorf("%s", strings.Join(errorTrans, ","))
+            }
+        }
+    
+        # // 应用默认值（用 creasty/defaults 或你自己写的 applyDefaults）
+        if err := defaults.Set(req); err != nil {
+            return err
+        }
+        return nil
+    }
+    # 3. 在方法中调用
+    func (controller *AdminController) Page(c *gin.Context) {
+       var pagination model.Pagination
+       var filter model.AdminFilter
+        
+       if err := request.BindAndSetDefaults(c, &pagination); err != nil {
+           controller.Error(c, http.StatusBadRequest, err.Error())
+           return
+       }
+        
+       _ = c.ShouldBindJSON(&filter)
+       total, admins, err := controller.adminService.GetPageByFilter(filter, pagination)
+           if err != nil {
+           controller.Error(c, http.StatusBadRequest, err.Error())
+       }
+        
+       pageResponse := response.BuildPageResponse[model.Admin, *response.AdminResponse](admins, total, pagination.Page, pagination.PerPage, response.NewAdminResponse)
+       controller.Success(c, pageResponse)
+        
+    }
+
+    ```
 
 #### 验证中间件
  * [gin-jwt](https://github.com/appleboy/gin-jwt) JWT 验证中间件，改造中间支持多用户类型登录（user,admin,jsc），登录时增加 user_type ，token 解析即判断是否是对应的类型。

@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	request "github.com/maxlcoder/homework-backend/app/request/admin"
+	"github.com/maxlcoder/homework-backend/app/request"
 	"github.com/maxlcoder/homework-backend/app/response"
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/pkg/validator"
@@ -47,7 +47,6 @@ func (controller *AdminController) Register(c *gin.Context) {
 		controller.Error(c, 400, "密码处理失败")
 		return
 	}
-	fmt.Println(admin.Password)
 	_, err = controller.adminService.Create(&admin)
 	if err != nil {
 		controller.Error(c, 400, fmt.Errorf("注册失败：%w", err).Error())
@@ -65,11 +64,13 @@ func (controller *AdminController) Me(c *gin.Context) {
 func (controller *AdminController) Page(c *gin.Context) {
 	var pagination model.Pagination
 	var filter model.AdminFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
-		controller.Error(c, http.StatusBadRequest, err)
+
+	if err := request.BindAndSetDefaults(c, &pagination); err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	_ = c.ShouldBindJSON(&filter)
+
+	_ = c.ShouldBindQuery(&filter)
 	total, admins, err := controller.adminService.GetPageByFilter(filter, pagination)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
@@ -77,5 +78,20 @@ func (controller *AdminController) Page(c *gin.Context) {
 
 	pageResponse := response.BuildPageResponse[model.Admin, *response.AdminResponse](admins, total, pagination.Page, pagination.PerPage, response.NewAdminResponse)
 	controller.Success(c, pageResponse)
+}
+
+func (controller *AdminController) Store(c *gin.Context) {
+
+}
+
+func (controller *AdminController) Update(c *gin.Context) {
+
+}
+
+func (controller *AdminController) Destroy(c *gin.Context) {
+
+}
+
+func (controller *AdminController) Show(c *gin.Context) {
 
 }

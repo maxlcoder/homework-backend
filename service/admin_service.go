@@ -5,6 +5,7 @@ import (
 
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
+	"gorm.io/gorm"
 )
 
 type AdminServiceInterface interface {
@@ -14,7 +15,15 @@ type AdminServiceInterface interface {
 }
 
 type AdminService struct {
+	db              *gorm.DB
 	AdminRepository repository.AdminRepository
+}
+
+func NewAdminService(db *gorm.DB, adminRepository repository.AdminRepository) *AdminService {
+	return &AdminService{
+		db:              db,
+		AdminRepository: adminRepository,
+	}
 }
 
 func (u *AdminService) Create(admin *model.Admin) (*model.Admin, error) {
@@ -29,7 +38,7 @@ func (u *AdminService) Create(admin *model.Admin) (*model.Admin, error) {
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
-	err := u.AdminRepository.Create(admin)
+	err := u.AdminRepository.Create(admin, nil)
 	if err != nil {
 		return nil, fmt.Errorf("用户创建失败: %w", err)
 	}
@@ -72,10 +81,19 @@ func (u *AdminService) GetByObject() {
 
 func (u *AdminService) GetPageByFilter(filter model.AdminFilter, pagination model.Pagination) (int64, []model.Admin, error) {
 
-	cond := repository.StructCondition[model.AdminFilter]{
-		Cond: filter,
+	cond := repository.ConditionScope{
 		Preloads: []string{
 			"Roles",
+		},
+		Scopes: []func(*gorm.DB) *gorm.DB{
+			func(db *gorm.DB) *gorm.DB {
+				if filter.Name != nil {
+					return repository.LikeScope("name", *filter.Name)(db)
+				} else {
+					return db
+				}
+
+			},
 		},
 	}
 	total, admins, err := u.AdminRepository.Page(cond, pagination)

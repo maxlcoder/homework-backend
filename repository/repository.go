@@ -6,12 +6,13 @@ import (
 )
 
 type Repository[T any] interface {
-	Create(entity *T) error
+	Create(entity *T, tx *gorm.DB) error
 	FindById(id uint) (*T, error)
 	Update(entity *T) error
 	DeleteById(id uint) error
-	Page(cond QueryCondition[T], pagination model.Pagination) (int64, []T, error)
+	Page(cond ConditionScope, pagination model.Pagination) (int64, []T, error)
 	FindBy(cond QueryCondition[T]) (*T, error)
+	CountBy(cond ConditionScope) (int64, error)
 }
 
 func First[T any, PT interface {

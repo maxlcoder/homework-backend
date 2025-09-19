@@ -29,7 +29,7 @@ func (u *UserService) Create(user *model.User) (*model.User, error) {
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
-	err := u.UserRepository.Create(user)
+	err := u.UserRepository.Create(user, nil)
 	if err != nil {
 		return nil, fmt.Errorf("用户创建失败: %w", err)
 	}
@@ -71,8 +71,8 @@ func (u UserService) GetByObject() {
 }
 
 func (u UserService) GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.User, error) {
-	cond := repository.StructCondition[model.UserFilter]{
-		Cond: modelFilter,
+	cond := repository.ConditionScope{
+		StructCond: modelFilter,
 	}
 	total, users, err := u.UserRepository.Page(cond, pagination)
 	if err != nil {
