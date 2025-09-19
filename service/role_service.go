@@ -255,13 +255,20 @@ func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*mo
 
 func (u *RoleService) Delete(role *model.Role) error {
 
+	// 检查角色是否存在
+	role, err := u.RoleRepository.FindById(role.ID)
+	if err != nil {
+		return err
+	}
+
 	// 启动事务
-	err := u.db.Transaction(func(tx *gorm.DB) error {
+	err = u.db.Transaction(func(tx *gorm.DB) error {
+		// 1. 删除 role 表记录
 		err := u.RoleRepository.DeleteById(role.ID, tx)
 		if err != nil {
 			return fmt.Errorf("角色删除失败: %w", err)
 		}
-		// 删除关联菜单
+		// 2. 删除关联菜单 role_menu 表记录
 		deleteCond := repository.ConditionScope{
 			Scopes: []func(*gorm.DB) *gorm.DB{
 				func(db *gorm.DB) *gorm.DB {
@@ -273,6 +280,10 @@ func (u *RoleService) Delete(role *model.Role) error {
 		if err != nil {
 			return fmt.Errorf("角色菜单删除失败: %w", err)
 		}
+		// 3. 删除 role_permission 表记录
+		u.RoleRepository.DeleteRolePermissionsByRoleId(role.ID, tx)
+		// 4. 删除 casbin 记录
+		u.enforcer.RemoveFilteredPolicy(0, "role_"+role.Name, "1")
 		return nil
 	})
 	return err

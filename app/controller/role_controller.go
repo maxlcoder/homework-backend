@@ -125,7 +125,6 @@ func (controller *RoleController) Destroy(c *gin.Context) {
 
 	var role model.Role
 	role.ID = uint(id)
-
 	err = controller.roleService.Delete(&role)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
