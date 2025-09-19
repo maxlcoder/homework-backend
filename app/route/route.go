@@ -39,7 +39,7 @@ func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 
 	// 注册中间件
 	initRepository()
-	initService()
+	initService(enforcer)
 	initController()
 
 	// auth 中间件
@@ -79,14 +79,19 @@ func initRepository() {
 }
 
 // service 初始化
-func initService() {
+func initService(enforcer *casbin.Enforcer) {
 	userService = &service.UserService{
 		UserRepository: userRepository,
 	}
 	adminService = &service.AdminService{
 		AdminRepository: adminRepository,
 	}
-	roleService = service.NewRoleService(database.DB, roleRepository, menuRepository, roleMenuRepository)
+	roleService = service.NewRoleService(
+		database.DB,
+		enforcer,
+		roleRepository,
+		menuRepository,
+		roleMenuRepository)
 }
 
 func initController() {

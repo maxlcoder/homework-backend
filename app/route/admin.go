@@ -23,10 +23,10 @@ func RegisterAdminAuthRoute(r *gin.RouterGroup, ctrl *AdminControllers) {
 	r.GET("admins/:id", ctrl.AdminController.Show)       // 详情
 
 	// ------------ 角色管理 ------------
-	r.GET("roles", ctrl.RoleController.Page)       // 分页列表
-	r.POST("roles", ctrl.RoleController.Store)     // 新增
-	r.PUT("roles/:id", ctrl.RoleController.Update) // 更新
-	r.DELETE("roles", ctrl.RoleController.Destroy) // 删除
-	r.GET("roles/:id", ctrl.RoleController.Show)   // 详情
+	r.GET("roles", ctrl.RoleController.Page)           // 分页列表
+	r.POST("roles", ctrl.RoleController.Store)         // 新增
+	r.PUT("roles/:id", ctrl.RoleController.Update)     // 更新
+	r.DELETE("roles/:id", ctrl.RoleController.Destroy) // 删除
+	r.GET("roles/:id", ctrl.RoleController.Show)       // 详情
 
 }

@@ -5,12 +5,15 @@ import (
 
 	"github.com/maxlcoder/homework-backend/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type RoleRepository interface {
 	Repository[model.Role] // 继承通用方法
 	// 扩展业务方法
 	FindByName(name string) (*model.Role, error)
+	UpsertCreateRolePermissionBatch(rolePermissions []model.RolePermission, tx *gorm.DB) error
+	DeleteRolePermissionsByRoleId(roleId uint, tx *gorm.DB) error
 }
 
 type RoleRepositoryImpl struct {
@@ -35,3 +38,14 @@ func (r *RoleRepositoryImpl) FindByName(name string) (*model.Role, error) {
 	return &role, nil
 }
 
+func (r *RoleRepositoryImpl) UpsertCreateRolePermissionBatch(rolePermissions []model.RolePermission, tx *gorm.DB) error {
+	r.getDB(tx).Clauses(clause.OnConflict{
+		DoNothing: true,
+	}).Create(&rolePermissions)
+	return nil
+}
+
+func (r *RoleRepositoryImpl) DeleteRolePermissionsByRoleId(roleId uint, tx *gorm.DB) error {
+	r.getDB(tx).Where("role_id = ?", roleId).Delete(&model.RolePermission{})
+	return nil
+}

@@ -36,13 +36,19 @@ func (r *BaseRepository[T]) FindById(id uint) (*T, error) {
 	return &entity, nil
 }
 
-func (r *BaseRepository[T]) Update(entity *T) error {
-	return r.db.Save(entity).Error
+func (r *BaseRepository[T]) Update(entity *T, tx *gorm.DB) error {
+	return r.getDB(tx).Updates(entity).Error
 }
 
-func (r *BaseRepository[T]) DeleteById(id uint) error {
+func (r *BaseRepository[T]) DeleteById(id uint, tx *gorm.DB) error {
 	var entity T
-	return r.db.Delete(&entity, id).Error
+	return r.getDB(tx).Delete(&entity, id).Error
+}
+
+func (r *BaseRepository[T]) DeleteBy(cond ConditionScope, tx *gorm.DB) error {
+	var entity T
+	query := cond.Apply(r.getDB(tx))
+	return query.Delete(&entity).Error
 }
 
 // 查询条件 where , 分页条件 paginationQuery

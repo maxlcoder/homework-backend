@@ -3,13 +3,13 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 	"github.com/maxlcoder/homework-backend/app/request"
 	"github.com/maxlcoder/homework-backend/app/response"
 	"github.com/maxlcoder/homework-backend/model"
-	"github.com/maxlcoder/homework-backend/pkg/validator"
 	"github.com/maxlcoder/homework-backend/service"
 )
 
@@ -76,82 +76,80 @@ func (controller *RoleController) Store(c *gin.Context) {
 }
 
 func (controller *RoleController) Update(c *gin.Context) {
-	var pagination model.Pagination
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
-		controller.Error(c, http.StatusBadRequest, err)
+	var roleStoreRequest request.RoleStoreRequest
+
+	if err := request.BindAndSetDefaults(c, &roleStoreRequest); err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.roleService.GetPageByFilter(filter, pagination)
+
+	// 角色 id
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	var pageResponse response.PageResponse[response.UserResponse]
-	pageResponse.Total = total
-	pageResponse.Page = pagination.Page
-	pageResponse.PerPage = pagination.PerPage
-	var userResponses []response.UserResponse
-	for _, user := range users {
-		userResponses = append(userResponses, response.ToUserResponse(user))
+	var role model.Role
+	err = copier.Copy(&role, &roleStoreRequest)
+	if err != nil {
+		controller.Error(c, 400, "数据获取失败")
+		return
 	}
-	pageResponse.Data = userResponses
 
-	controller.Success(c, pageResponse)
+	role.ID = uint(id)
+
+	var menus []model.Menu
+	err = copier.Copy(&menus, &roleStoreRequest.Menus)
+	if err != nil {
+		controller.Error(c, 400, "数据获取失败")
+		return
+	}
+
+	_, err = controller.roleService.UpdateWithMenus(&role, menus)
+	if err != nil {
+		controller.Error(c, 400, fmt.Errorf("新增失败：%w", err).Error())
+		return
+	}
+	controller.Success(c, nil)
 
 }
 
 func (controller *RoleController) Destroy(c *gin.Context) {
-	var pagination model.Pagination
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
-		controller.Error(c, http.StatusBadRequest, err)
-		return
-	}
-	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.roleService.GetPageByFilter(filter, pagination)
+	// 角色 id
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	var pageResponse response.PageResponse[response.UserResponse]
-	pageResponse.Total = total
-	pageResponse.Page = pagination.Page
-	pageResponse.PerPage = pagination.PerPage
-	var userResponses []response.UserResponse
-	for _, user := range users {
-		userResponses = append(userResponses, response.ToUserResponse(user))
-	}
-	pageResponse.Data = userResponses
+	var role model.Role
+	role.ID = uint(id)
 
-	controller.Success(c, pageResponse)
+	err = controller.roleService.Delete(&role)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+	}
+	controller.Success(c, nil)
 
 }
 
 func (controller *RoleController) Show(c *gin.Context) {
-	var pagination model.Pagination
-	var filter model.RoleFilter
-	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
-		controller.Error(c, http.StatusBadRequest, err)
-		return
-	}
-	_ = c.ShouldBindJSON(&filter)
-	total, users, err := controller.roleService.GetPageByFilter(filter, pagination)
+	// 角色 id
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	var pageResponse response.PageResponse[response.UserResponse]
-	pageResponse.Total = total
-	pageResponse.Page = pagination.Page
-	pageResponse.PerPage = pagination.PerPage
-	var userResponses []response.UserResponse
-	for _, user := range users {
-		userResponses = append(userResponses, response.ToUserResponse(user))
+	role, err := controller.roleService.GetById(uint(id))
+	if err != nil {
+		controller.Error(c, http.StatusNotFound, err.Error())
 	}
-	pageResponse.Data = userResponses
 
-	controller.Success(c, pageResponse)
+	var roleResponse response.RoleResponse
+	copier.Copy(&roleResponse, &role)
+
+	controller.Success(c, roleResponse)
 
 }

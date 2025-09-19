@@ -18,7 +18,7 @@ func CasbinMiddleware(e *casbin.Enforcer) gin.HandlerFunc {
 			return
 		}
 		method := c.Request.Method
-		path := c.Request.URL.Path
+		path := c.FullPath()
 
 		// 获取当前用户的角色、
 		adminRoleNameStr, ok := adminRoleName.(string)
