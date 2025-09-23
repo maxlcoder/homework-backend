@@ -281,12 +281,6 @@ go run cmd/main.go seed
 go run main.go
 ```
 
-## 📚 API 文档
-
-启动服务后，可通过以下方式查看 API 文档：
-
-- Swagger UI：`http://localhost:8080/swagger/index.html`
-- API 集合：`docs/api.md`
 
 ## 🔧 开发指南
 
@@ -295,6 +289,13 @@ go run main.go
 - 遵循 Go 官方代码规范
 - 使用 gofmt 格式化代码
 - 添加必要的注释和文档
+
+### 业务
+
+- restful api 入口对应 controller
+- controller 注入 service，service 注入 repository ，repository 通过 gorm 处理 model 对应的数据
+- 三层业务架构方案，controller 不直接和 Repository 接触，均通过 service 进行中间层的数据整合
+- 定义通用的 repository 操作方案
 
 ### 提交规范
 
@@ -327,5 +328,5 @@ go test -cover ./...
 如有问题或建议，请通过以下方式联系：
 
 - 提交 Issue
-- 发送邮件到：[your-email@example.com]
+- 发送邮件到：[liurenlin77@gmail.com]
 
