@@ -22,8 +22,8 @@ func (u *MenuService) Create(menu *model.Menu) (*model.Menu, error) {
 	filter := model.MenuFilter{
 		Name: &menu.Name,
 	}
-	cond := repository.StructCondition[model.MenuFilter]{
-		Cond: filter,
+	cond := repository.ConditionScope{
+		StructCond: filter,
 	}
 	findUser, _ := u.MenuRepository.FindBy(cond)
 	if findUser != nil {
@@ -55,8 +55,8 @@ func (u *MenuService) GetById(id uint) (*model.Menu, error) {
 	filter := model.MenuFilter{
 		ID: &id,
 	}
-	cond := repository.StructCondition[model.MenuFilter]{
-		Cond: filter,
+	cond := repository.ConditionScope{
+		StructCond: filter,
 	}
 	user, err := u.MenuRepository.FindBy(cond)
 	if err != nil {

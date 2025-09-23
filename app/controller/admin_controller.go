@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
@@ -81,17 +82,131 @@ func (controller *AdminController) Page(c *gin.Context) {
 }
 
 func (controller *AdminController) Store(c *gin.Context) {
+	// 参数处理
+	var adminStoreRequest request.AdminStoreRequest
+	if err := request.BindAndSetDefaults(c, &adminStoreRequest); err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var admin model.Admin
+	err := copier.Copy(&admin, &adminStoreRequest)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, "数据获取失败")
+		return
+	}
+	var roles []model.Role
+	err = copier.Copy(&roles, &adminStoreRequest.Roles)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, "数据获取失败")
+		return
+	}
+
+	// 密码处理
+	if admin.Password != "" {
+		// 密码 hash 处理
+		admin.Password, err = model.HashPassword(admin.Password)
+		if err != nil {
+			controller.Error(c, 400, "密码处理失败")
+			return
+		}
+	}
+
+	// service 处理
+	_, err = controller.adminService.CreateWithRoles(&admin, roles)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, fmt.Errorf("新增失败：%w", err).Error())
+		return
+	}
+	dataID := response.DataId{ID: int(admin.ID)}
+	controller.Success(c, dataID)
 
 }
 
 func (controller *AdminController) Update(c *gin.Context) {
+	// 参数处理
+	var adminUpdateRequest request.AdminUpdateRequest
+	if err := request.BindAndSetDefaults(c, &adminUpdateRequest); err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
+	// 角色 id
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+	}
+
+	if id == 1 {
+		controller.Error(c, http.StatusBadRequest, "参数异常")
+	}
+
+	var admin model.Admin
+	err = copier.Copy(&admin, &adminUpdateRequest)
+	if err != nil {
+		controller.Error(c, 400, "数据获取失败")
+		return
+	}
+	admin.ID = uint(id)
+
+	// 密码处理
+	if admin.Password != "" {
+		// 密码 hash 处理
+		admin.Password, err = model.HashPassword(admin.Password)
+		if err != nil {
+			controller.Error(c, 400, "密码处理失败")
+			return
+		}
+	}
+
+	var roles []model.Role
+	err = copier.Copy(&roles, &adminUpdateRequest.Roles)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, "数据获取失败")
+		return
+	}
+
+	// service 处理
+	_, err = controller.adminService.UpdateWithRoles(&admin, roles)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, fmt.Errorf("新增失败：%w", err).Error())
+		return
+	}
+	controller.Success(c, nil)
 }
 
 func (controller *AdminController) Destroy(c *gin.Context) {
-
+	// admin id
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+	}
+	var admin model.Admin
+	admin.ID = uint(id)
+	err = controller.adminService.Delete(&admin)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+	}
+	controller.Success(c, nil)
 }
 
 func (controller *AdminController) Show(c *gin.Context) {
+	// admin id
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+	}
 
+	admin, err := controller.adminService.GetById(uint(id))
+	if err != nil {
+		controller.Error(c, http.StatusNotFound, err.Error())
+	}
+
+	var adminResponse response.AdminResponse
+	copier.Copy(&adminResponse, &admin)
+
+	controller.Success(c, adminResponse)
 }

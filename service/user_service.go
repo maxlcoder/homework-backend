@@ -22,8 +22,8 @@ func (u *UserService) Create(user *model.User) (*model.User, error) {
 	userFiler := model.UserFilter{
 		Name: &user.Name,
 	}
-	cond := repository.StructCondition[model.UserFilter]{
-		Cond: userFiler,
+	cond := repository.ConditionScope{
+		StructCond: userFiler,
 	}
 	findUser, _ := u.UserRepository.FindBy(cond)
 	if findUser != nil {
@@ -55,8 +55,8 @@ func (u *UserService) GetById(id uint) (*model.User, error) {
 	userFiler := model.UserFilter{
 		ID: &id,
 	}
-	cond := repository.StructCondition[model.UserFilter]{
-		Cond: userFiler,
+	cond := repository.ConditionScope{
+		StructCond: userFiler,
 	}
 	user, err := u.UserRepository.FindBy(cond)
 	if err != nil {

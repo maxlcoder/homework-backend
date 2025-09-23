@@ -28,6 +28,10 @@ func (r *BaseRepository[T]) Create(entity *T, tx *gorm.DB) error {
 	return r.getDB(tx).Create(entity).Error
 }
 
+func (r *BaseRepository[T]) CreateBatch(entities []*T, tx *gorm.DB) error {
+	return r.getDB(tx).CreateInBatches(entities, 100).Error
+}
+
 func (r *BaseRepository[T]) FindById(id uint) (*T, error) {
 	var entity T
 	if err := r.db.First(&entity, id).Error; err != nil {
@@ -71,7 +75,7 @@ func (r *BaseRepository[T]) Page(cond ConditionScope, pagination model.Paginatio
 	return total, entities, nil
 }
 
-func (r *BaseRepository[T]) FindBy(cond QueryCondition[T]) (*T, error) {
+func (r *BaseRepository[T]) FindBy(cond ConditionScope) (*T, error) {
 	var entity T
 	query := cond.Apply(r.db.Model(&entity))
 	if err := query.First(&entity).Error; err != nil {

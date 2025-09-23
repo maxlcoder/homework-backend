@@ -14,7 +14,7 @@ type Admin struct {
 }
 
 type AdminRole struct {
-	BaseModel
+	IDModel
 	AdminId uint `gorm:"not null;default:0;uniqueIndex:uq_admin_role"`
 	RoleId  uint `gorm:"not null;default:0;uniqueIndex:uq_admin_role"`
 }

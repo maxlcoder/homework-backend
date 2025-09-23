@@ -278,48 +278,131 @@ func seedRoleMenuPermissions(db *gorm.DB, enforcer *casbin.Enforcer) error {
 func loadMenus() []model.Menu {
 	menus := []model.Menu{
 		{
-			Number: "n1",
-			Name:   "菜单 1",
+			Number: "system-setting",
+			Name:   "系统设置",
 			Sort:   1,
 			Children: []*model.Menu{
 				{
-					Number: "n1-1",
-					Name:   "菜单 1-1",
+					Number: "admin-management",
+					Name:   "账号管理",
 					Children: []*model.Menu{
 						{
-							Number: "n1-1-1",
-							Name:   "菜单 1-1-1",
+							Number: "admin-list",
+							Name:   "列表",
 							Permissions: []*model.Permission{
 								{
-									Name:   "用户列表",
-									PATH:   "/admin/users",
+									Name:   "列表",
+									PATH:   "/admin/admins",
 									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "admin-add",
+							Name:   "新增",
+							Permissions: []*model.Permission{
+								{
+									Name:   "新增",
+									PATH:   "/admin/admins",
+									Method: "POST",
+								},
+							},
+						},
+						{
+							Number: "admin-update",
+							Name:   "更新",
+							Permissions: []*model.Permission{
+								{
+									Name:   "更新",
+									PATH:   "/admin/admins/:id",
+									Method: "PUT",
+								},
+							},
+						},
+						{
+							Number: "admin-detail",
+							Name:   "详情",
+							Permissions: []*model.Permission{
+								{
+									Name:   "详情",
+									PATH:   "/admin/admins/:id",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "admin-delete",
+							Name:   "删除",
+							Permissions: []*model.Permission{
+								{
+									Name:   "删除",
+									PATH:   "/admin/admins/:id",
+									Method: "DELETE",
 								},
 							},
 						},
 					},
 				},
-			},
-		},
-		{
-			Number: "n2",
-			Name:   "菜单 2",
-			Sort:   1,
-			Children: []*model.Menu{
 				{
-					Number: "n2-1",
-					Name:   "菜单 2-1",
-				},
-			},
-		},
-		{
-			Number: "n3",
-			Name:   "菜单 3",
-			Sort:   1,
-			Children: []*model.Menu{
-				{
-					Number: "n3-1",
-					Name:   "菜单 3-1",
+					Number: "role-management",
+					Name:   "角色管理",
+					Children: []*model.Menu{
+						{
+							Number: "role-list",
+							Name:   "列表",
+							Permissions: []*model.Permission{
+								{
+									Name:   "列表",
+									PATH:   "/admin/roles",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "role-add",
+							Name:   "新增",
+							Permissions: []*model.Permission{
+								{
+									Name:   "新增",
+									PATH:   "/admin/roles",
+									Method: "POST",
+								},
+							},
+						},
+						{
+							Number: "role-update",
+							Name:   "更新",
+							Permissions: []*model.Permission{
+								{
+									Name:   "更新",
+									PATH:   "/admin/roles/:id",
+									Method: "PUT",
+								},
+							},
+						},
+						{
+							Number: "role-detail",
+							Name:   "详情",
+							Permissions: []*model.Permission{
+								{
+									Name:   "详情",
+									PATH:   "/admin/roles/:id",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "role-delete",
+							Name:   "删除",
+							Permissions: []*model.Permission{
+								{
+									Name:   "删除",
+									PATH:   "/admin/roles/:id",
+									Method: "DELETE",
+								},
+							},
+						},
+					},
 				},
 			},
 		},

@@ -16,11 +16,12 @@ import (
 
 // service 列表
 var (
-	userRepository     repository.UserRepository
-	adminRepository    repository.AdminRepository
-	roleRepository     repository.RoleRepository
-	menuRepository     repository.MenuRepository
-	roleMenuRepository repository.RoleMenuRepository
+	userRepository      repository.UserRepository
+	adminRepository     repository.AdminRepository
+	adminRoleRepository repository.AdminRoleRepository
+	roleRepository      repository.RoleRepository
+	menuRepository      repository.MenuRepository
+	roleMenuRepository  repository.RoleMenuRepository
 )
 
 // service 列表
@@ -73,6 +74,7 @@ func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 func initRepository() {
 	userRepository = repository.NewUserRepository(database.DB)
 	adminRepository = repository.NewAdminRepository(database.DB)
+	adminRoleRepository = repository.NewAdminRoleRepository(database.DB)
 	roleRepository = repository.NewRoleRepository(database.DB)
 	menuRepository = repository.NewMenuRepository(database.DB)
 	roleMenuRepository = repository.NewRoleMenuRepository(database.DB)
@@ -83,9 +85,11 @@ func initService(enforcer *casbin.Enforcer) {
 	userService = &service.UserService{
 		UserRepository: userRepository,
 	}
-	adminService = &service.AdminService{
-		AdminRepository: adminRepository,
-	}
+	adminService = service.NewAdminService(
+		database.DB,
+		adminRepository,
+		roleRepository,
+		adminRoleRepository)
 	roleService = service.NewRoleService(
 		database.DB,
 		enforcer,

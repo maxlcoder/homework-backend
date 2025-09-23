@@ -7,12 +7,13 @@ import (
 
 type Repository[T any] interface {
 	Create(entity *T, tx *gorm.DB) error
+	CreateBatch(entity []*T, tx *gorm.DB) error
 	FindById(id uint) (*T, error)
 	Update(entity *T, tx *gorm.DB) error
 	DeleteById(id uint, tx *gorm.DB) error
 	DeleteBy(cond ConditionScope, tx *gorm.DB) error
 	Page(cond ConditionScope, pagination model.Pagination) (int64, []T, error)
-	FindBy(cond QueryCondition[T]) (*T, error)
+	FindBy(cond ConditionScope) (*T, error)
 	CountBy(cond ConditionScope) (int64, error)
 }
 

@@ -43,8 +43,8 @@ func (u *RoleService) Create(role *model.Role) (*model.Role, error) {
 		Name: &role.Name,
 	}
 
-	cond := repository.StructCondition[model.RoleFilter]{
-		Cond: filter,
+	cond := repository.ConditionScope{
+		StructCond: filter,
 	}
 
 	findUser, _ := u.RoleRepository.FindBy(cond)
@@ -65,8 +65,8 @@ func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*mo
 		Name: &role.Name,
 	}
 
-	cond := repository.StructCondition[model.RoleFilter]{
-		Cond: filter,
+	cond := repository.ConditionScope{
+		StructCond: filter,
 	}
 
 	find, _ := u.RoleRepository.FindBy(cond)
@@ -153,8 +153,8 @@ func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*mo
 	filter := model.RoleFilter{
 		ID: &role.ID,
 	}
-	cond := repository.StructCondition[model.RoleFilter]{
-		Cond: filter,
+	cond := repository.ConditionScope{
+		StructCond: filter,
 	}
 	find, _ := u.RoleRepository.FindBy(cond)
 	if find == nil {
@@ -299,8 +299,8 @@ func (u *RoleService) GetById(id uint) (*model.Role, error) {
 		ID: &id,
 	}
 
-	cond := repository.StructCondition[model.RoleFilter]{
-		Cond: filter,
+	cond := repository.ConditionScope{
+		StructCond: filter,
 	}
 	user, err := u.RoleRepository.FindBy(cond)
 	if err != nil {

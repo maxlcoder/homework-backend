@@ -1,153 +1,331 @@
+# Homework Backend
 
-# 框架介绍
-### 背景
+基于 Gin 框架构建的后台管理系统，提供用户管理、权限控制、菜单管理等功能。
 
-使用 Gin 框架构建一个 web 服务项目
+## 📋 目录
 
+- [项目介绍](#项目介绍)
+- [技术栈](#技术栈)
+- [项目结构](#项目结构)
+- [核心功能](#核心功能)
+- [权限设计](#权限设计)
+- [快速开始](#快速开始)
+- [API 文档](#api-文档)
+- [开发指南](#开发指南)
 
-### 组件
+## 🚀 项目介绍
 
-#### 配置项管理
+这是一个基于 Gin 框架开发的后台管理系统，采用现代化的架构设计，支持多租户、RBAC 权限模型，提供完整的用户管理和权限控制功能。
 
-使用 [Viper](https://github.com/spf13/viper) 进行配置管理
+### 主要特性
 
-### 项目结构
- * 前台 `api`
- * 后台 `admin`
- * 其他端
+- 🏗️ **架构清晰**：采用 MVC 分层架构，代码结构清晰
+- 🔐 **权限完善**：基于 RBAC 的权限控制，支持菜单和 API 权限
+- 🏢 **多租户**：支持多租户架构设计
+- 📝 **参数校验**：完善的请求参数校验和错误处理
+- 🌐 **国际化**：支持多语言本地化
+- 🚀 **高性能**：基于 Gin 框架，性能优异
 
-### 功能
- * ORM
-   > 使用 gorm
- * 权限校验 
-   > 使用 casbin 作为 rbac 形式的权限校验，同时补充 menu，permission 相关表来做菜单业务权限控制
-   > vo -> 角色 v1-> object v2-> action  这个顺序和 casbin 配置设置的 `r = sub, obj, act` 对应。
-   
- * 权限分配
-   >设计 `menu` ，`menu_permission` ，`permission` 表进行菜单和权限的管理
-   > 
-   >设计 `role` ， `role_menu` ， `role_permission` 表进行角色菜单和角色权限的分配，**其中角色在菜单和权限的对应关系表现上分别对应可视界面和接口 API 的允许范围**
-   > 同时针对权限的校验通过 casbin 进行判断，尽管 casbin 也可以作为权限关系的处理服务，但是考虑到业务组件的可替代性，暂时同时保持数据库和 casbin 双重可处理形式
-   > 
-   >设计 `admin_role` 进行管理员角色分配，支持一个管理员多种角色场景
+## 🛠️ 技术栈
 
+- **Web 框架**：[Gin](https://gin-gonic.com/)
+- **ORM**：[GORM](https://gorm.io/)
+- **权限控制**：[Casbin](https://casbin.org/)
+- **配置管理**：[Viper](https://github.com/spf13/viper)
+- **JWT 认证**：[gin-jwt](https://github.com/appleboy/gin-jwt)
+- **密码加密**：bcrypt
+- **参数校验**：validator v10
 
-#### 全局变量
+## 📁 项目结构
 
-* 请求临时中间的全局变量统一采用 `c.Set` 进行设置，每一个请求单独设置  
+```
+.
+├── app/                    # 应用层
+│   ├── contract/          # 接口定义
+│   ├── controller/        # 控制器
+│   ├── middleware/        # 中间件
+│   ├── request/          # 请求结构体
+│   ├── response/         # 响应结构体
+│   └── route/            # 路由定义
+├── cmd/                   # 命令行工具
+├── config/               # 配置文件
+├── database/             # 数据库相关
+├── model/                # 数据模型
+├── pkg/                  # 公共包
+├── repository/           # 数据访问层
+├── service/              # 业务逻辑层
+└── main.go              # 程序入口
+```
 
-- [ ] 用户全局变量缓存，避免每个请求重复请求数据库来获取用户信息
-- [ ] -
+### 架构说明
 
-#### 路由
- * 路由分组
- * Restful 风格
+- **前台端**：`api` - 面向普通用户的接口
+- **后台端**：`admin` - 面向管理员的接口
+- **扩展端**：支持其他业务端扩展
 
-#### 密码
- * 使用 `bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)` 生成密码，使用 `err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))` 检查密码
+## ⚡ 核心功能
 
-#### 入参校验
- * 独立的 Request 
- * 自定义验证
- * 入参默认值设置
-   
-    **---------注意---------**
-    >ShouldBind:   
-     如果 Content-Type=application/json → 调用 ShouldBindJSON 
-     如果 Content-Type=application/x-www-form-urlencoded → 调用 ShouldBindForm
- 
-    >为此在入参校验中通过判断请求方式来兼容请求类型
+### 🗄️ ORM 数据层
 
-    ```aiignore
-    # 1. 默认值标签设置
-    type PageRequest struct {
-      Page     *int   `json:"page" default:"1" binding:"omitempty,gte=1"`
-      PageSize *int   `json:"page_size" default:"10" binding:"omitempty,gte=1,max=100"`
-      Name     string `json:"name" default:"guest" binding:"omitempty,min=2"`
-    }
-     
-    # 2. 使用定义全局处理默认值函数，同时兼容参数 validator 判断，并对判断结果进行中文转换
-    func BindAndSetDefaults(c *gin.Context, req interface{}) error {
-        # // 判断一下请求方式
-        ct := c.ContentType()
-        if ct == "application/json" {
-            if c.Request.Method == "GET" {
-                if err := c.ShouldBindQuery(req); err != nil {
-                    errorTrans := validator.TranslateError(err)
-                    return fmt.Errorf("%s", strings.Join(errorTrans, ","))
-    
-                }
-            }
-        } else {
-            if err := c.ShouldBind(req); err != nil {
+使用 GORM 作为 ORM 框架，提供：
+- 数据库连接管理
+- 模型定义和关联
+- 查询构建器
+- 事务支持
+
+### 🔒 权限校验
+
+采用 Casbin 实现 RBAC 权限模型：
+- **权限模型**：`subject(用户/角色) -> object(资源) -> action(操作)`
+- **配置格式**：对应 Casbin 的 `r = sub, obj, act` 配置
+- **双重保障**：数据库存储 + Casbin 校验
+
+### 👥 权限分配
+
+完善的权限管理体系：
+
+#### 核心表设计
+- `menu`：菜单表
+- `menu_permission`：菜单权限关联表  
+- `permission`：权限表
+- `role`：角色表
+- `role_menu`：角色菜单关联表
+- `role_permission`：角色权限关联表
+- `admin_role`：管理员角色关联表
+
+#### 权限层级
+- **显示权限**：控制菜单、按钮等 UI 元素的可见性
+- **操作权限**：控制 API 接口的访问权限
+- **多角色支持**：一个管理员可拥有多个角色
+
+### 🌐 全局变量管理
+
+- **请求级变量**：使用 `c.Set()` 设置请求上下文变量
+- **用户缓存**：避免重复查询数据库获取用户信息
+
+### 🛣️ 路由管理
+
+- **分组路由**：按功能模块分组管理
+- **RESTful API**：遵循 REST 规范设计接口
+- **中间件支持**：认证、权限、错误处理等中间件
+
+### 🔐 密码安全
+
+使用 bcrypt 进行密码加密：
+
+```go
+// 密码加密
+bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+// 密码验证
+err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+```
+
+### ✅ 参数校验
+
+完善的请求参数校验机制：
+
+#### 特性
+- **独立的 Request 结构**：每个接口对应独立的请求结构体
+- **自定义验证规则**：支持业务相关的验证逻辑
+- **默认值设置**：自动设置参数默认值
+- **错误信息本地化**：支持中文错误提示
+
+#### 使用示例
+
+```go
+// 1. 定义请求结构体
+type PageRequest struct {
+    Page     *int   `json:"page" default:"1" binding:"omitempty,gte=1"`
+    PageSize *int   `json:"page_size" default:"10" binding:"omitempty,gte=1,max=100"`
+    Name     string `json:"name" default:"guest" binding:"omitempty,min=2"`
+}
+
+// 2. 通用绑定和验证函数
+func BindAndSetDefaults(c *gin.Context, req interface{}) error {
+    // 根据 Content-Type 选择绑定方式
+    ct := c.ContentType()
+    if ct == "application/json" {
+        if c.Request.Method == "GET" {
+            if err := c.ShouldBindQuery(req); err != nil {
                 errorTrans := validator.TranslateError(err)
                 return fmt.Errorf("%s", strings.Join(errorTrans, ","))
             }
         }
-    
-        # // 应用默认值（用 creasty/defaults 或你自己写的 applyDefaults）
-        if err := defaults.Set(req); err != nil {
-            return err
+    } else {
+        if err := c.ShouldBind(req); err != nil {
+            errorTrans := validator.TranslateError(err)
+            return fmt.Errorf("%s", strings.Join(errorTrans, ","))
         }
-        return nil
     }
-    # 3. 在方法中调用
-    func (controller *AdminController) Page(c *gin.Context) {
-       var pagination model.Pagination
-       var filter model.AdminFilter
-        
-       if err := request.BindAndSetDefaults(c, &pagination); err != nil {
-           controller.Error(c, http.StatusBadRequest, err.Error())
-           return
-       }
-        
-       _ = c.ShouldBindJSON(&filter)
-       total, admins, err := controller.adminService.GetPageByFilter(filter, pagination)
-           if err != nil {
-           controller.Error(c, http.StatusBadRequest, err.Error())
-       }
-        
-       pageResponse := response.BuildPageResponse[model.Admin, *response.AdminResponse](admins, total, pagination.Page, pagination.PerPage, response.NewAdminResponse)
-       controller.Success(c, pageResponse)
-        
+    
+    // 应用默认值
+    if err := defaults.Set(req); err != nil {
+        return err
     }
+    return nil
+}
 
-    ```
+// 3. 在控制器中使用
+func (controller *AdminController) Page(c *gin.Context) {
+    var pagination model.Pagination
+    var filter model.AdminFilter
+    
+    if err := request.BindAndSetDefaults(c, &pagination); err != nil {
+        controller.Error(c, http.StatusBadRequest, err.Error())
+        return
+    }
+    
+    _ = c.ShouldBindJSON(&filter)
+    total, admins, err := controller.adminService.GetPageByFilter(filter, pagination)
+    if err != nil {
+        controller.Error(c, http.StatusBadRequest, err.Error())
+        return
+    }
+    
+    pageResponse := response.BuildPageResponse[model.Admin, *response.AdminResponse](
+        admins, total, pagination.Page, pagination.PerPage, response.NewAdminResponse)
+    controller.Success(c, pageResponse)
+}
+```
 
-#### 验证中间件
- * [gin-jwt](https://github.com/appleboy/gin-jwt) JWT 验证中间件，改造中间支持多用户类型登录（user,admin,jsc），登录时增加 user_type ，token 解析即判断是否是对应的类型。
-通过 identityHandler 指定 user_type
+#### 重要说明
 
-#### 控制器
- * 返回格式统一
+> **ShouldBind 机制**：
+> - `Content-Type=application/json` → 调用 `ShouldBindJSON`
+> - `Content-Type=application/x-www-form-urlencoded` → 调用 `ShouldBindForm`
+>
+> 为了兼容不同的请求类型，在参数校验中通过判断请求方式来选择合适的绑定方法。
 
-#### 本地化
- * 参数校验提示本地化
- * 
+### 🎫 JWT 认证中间件
 
-#### 缓存
+基于 [gin-jwt](https://github.com/appleboy/gin-jwt) 实现的认证系统：
 
+- **多用户类型**：支持 `user`、`admin`、`jsc` 等多种用户类型登录
+- **类型识别**：登录时指定 `user_type`，token 解析时验证用户类型
+- **身份处理**：通过 `identityHandler` 指定用户类型
 
-#### 数据库
+### 📤 统一响应格式
 
+所有 API 接口采用统一的响应格式，确保前端处理的一致性。
 
-### 菜单权限设计
+### 🌍 国际化支持
 
-#### 设计要求
-* 支持多租户
-* RBAC模式权限（兼容弱ABAC模式）
-* 区分显示层（菜单按钮等）和操作层（API） 等权限控制
+- **参数校验本地化**：错误提示信息支持中文显示
+- **多语言扩展**：支持其他语言的本地化扩展
 
-#### 设计原理
+### 💾 缓存机制
 
-1. 设计相关表存储基础角色、菜单、权限相关的内容
-2. 使用 casbin 作为后端权限的校验方式
-3. 设计超管拥有全部权限，能够给租户分配租户可操作权限
-4. 权限数据初始化设计，每次升级将权限的初次分配用升级脚本操作，避免人工操作
+提供多层次的缓存支持，提升系统性能。
+
+### 🗃️ 数据库管理
+
+完善的数据库管理功能，包括连接池、事务管理等。
+
+## 🔐 权限设计
+
+### 设计要求
+
+- ✅ **多租户支持**：支持多租户架构
+- ✅ **RBAC 模式**：基于角色的权限控制（兼容弱 ABAC 模式）
+- ✅ **权限分层**：区分显示层（菜单按钮等）和操作层（API）权限控制
+
+### 设计原理
+
+1. **数据存储**：设计相关表存储基础角色、菜单、权限相关的内容
+2. **权限校验**：使用 Casbin 作为后端权限的校验方式
+3. **超级管理员**：设计超管拥有全部权限，能够给租户分配租户可操作权限
+4. **权限初始化**：每次升级将权限的初次分配用升级脚本操作，避免人工操作
 
 ### 数据初始化
 
-1. 初始化超级管理员账号，初始化超级管理员角色
-2. 分配超管角色权限
+1. **超级管理员**：初始化超级管理员账号和角色
+2. **权限分配**：为超管分配所有权限
+3. **基础数据**：初始化基础菜单和权限数据
 
+## 🚀 快速开始
+
+### 环境要求
+
+- Go 1.19+
+- MySQL 5.7+
+- Redis 6.0+
+
+### 安装步骤
+
+1. **克隆项目**
+```bash
+git clone <repository-url>
+cd homework-backend
+```
+
+2. **安装依赖**
+```bash
+go mod download
+```
+
+3. **配置文件**
+```bash
+cp config/config.yaml.example config/config.yaml
+# 编辑配置文件，设置数据库连接等信息
+```
+
+4. **数据库初始化**
+```bash
+go run cmd/main.go migrate
+go run cmd/main.go seed
+```
+
+5. **启动服务**
+```bash
+go run main.go
+```
+
+## 📚 API 文档
+
+启动服务后，可通过以下方式查看 API 文档：
+
+- Swagger UI：`http://localhost:8080/swagger/index.html`
+- API 集合：`docs/api.md`
+
+## 🔧 开发指南
+
+### 代码规范
+
+- 遵循 Go 官方代码规范
+- 使用 gofmt 格式化代码
+- 添加必要的注释和文档
+
+### 提交规范
+
+- 遵循 Conventional Commits 规范
+- 提交前运行测试
+- 确保代码质量
+
+### 测试
+
+```bash
+# 运行测试
+go test ./...
+
+# 运行测试并生成覆盖率报告
+go test -cover ./...
+```
+
+---
+
+## 📄 许可证
+
+本项目采用 MIT 许可证，详情请查看 [LICENSE](LICENSE) 文件。
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request 来帮助改进这个项目。
+
+## 📞 联系方式
+
+如有问题或建议，请通过以下方式联系：
+
+- 提交 Issue
+- 发送邮件到：[your-email@example.com]
 
