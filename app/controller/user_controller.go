@@ -52,7 +52,7 @@ func (controller *UserController) Register(c *gin.Context) {
 		controller.Error(c, 400, fmt.Errorf("注册失败：%w", err).Error())
 		return
 	}
-	dataID := response.DataId{ID: int(user.ID)}
+	dataID := response.DataId{ID: user.ID}
 	controller.Success(c, dataID)
 }
 

@@ -65,6 +65,12 @@
 
 ## ⚡ 核心功能
 
+### 配置
+
+- 系统使用 etcd 作为远程配置中心，部分非敏感信息且几乎不太会调整配置放在代码仓库的 yaml 文件件中
+- 使用 Viper 进行配置获取
+- 系统代码保留配置更新监听（监听和轮询机制）代码，考虑项目部署的简便性，暂不考虑开启配置监听，而是直接重启项目形式进行配置更新
+
 ### 🗄️ ORM 数据层
 
 使用 GORM 作为 ORM 框架，提供：
@@ -296,6 +302,7 @@ go run main.go
 - controller 注入 service，service 注入 repository ，repository 通过 gorm 处理 model 对应的数据
 - 三层业务架构方案，controller 不直接和 Repository 接触，均通过 service 进行中间层的数据整合
 - 定义通用的 repository 操作方案
+- 
 
 ### 提交规范
 

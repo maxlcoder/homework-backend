@@ -71,7 +71,7 @@ func (controller *RoleController) Store(c *gin.Context) {
 		controller.Error(c, 400, fmt.Errorf("新增失败：%w", err).Error())
 		return
 	}
-	dataID := response.DataId{ID: int(role.ID)}
+	dataID := response.DataId{ID: role.ID}
 	controller.Success(c, dataID)
 }
 

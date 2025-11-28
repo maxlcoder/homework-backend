@@ -21,7 +21,7 @@ type BaseResponse struct {
 
 // 一般作为创建对象后返回
 type DataId struct {
-	ID int `json:"id"`
+	ID uint `json:"id"`
 }
 
 // 组装分页结果

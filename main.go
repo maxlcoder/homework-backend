@@ -7,25 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/middleware"
 	"github.com/maxlcoder/homework-backend/app/route"
+	"github.com/maxlcoder/homework-backend/config"
 	"github.com/maxlcoder/homework-backend/database"
 	"github.com/maxlcoder/homework-backend/database/seed"
+	"github.com/maxlcoder/homework-backend/kafka"
 	"github.com/maxlcoder/homework-backend/pkg/validator"
 	"github.com/maxlcoder/homework-backend/service"
-	"github.com/spf13/viper"
+	_ "github.com/spf13/viper/remote"
 )
 
 func setupRouter() *gin.Engine {
-	// 配置项加载
-	viper.SetConfigFile("./config/config.yaml")
-	err := viper.ReadInConfig()
-	if err != nil {
-		panic(fmt.Errorf("配置读取失败：%s \n", err))
-	}
-	// 监视配置变化
-	viper.WatchConfig()
+	// 初始化配置
+	config.Init()
 
 	// 数据连接初始化
-	err = database.InitDB()
+	err := database.InitDB()
 	if err != nil {
 		panic(fmt.Errorf("数据库连接初始化失败：%s \n", err))
 	}
@@ -35,6 +31,10 @@ func setupRouter() *gin.Engine {
 	if err != nil {
 		panic(fmt.Errorf("Casbin 初始化失败: %s \n", err))
 	}
+
+	// kafka 初始化
+	kafka.InitProducer(config.Conf.Kafka.Brokers)
+	kafka.InitConsumer(config.Conf.Kafka.Brokers)
 
 	// 参数校验翻译
 	validator.InitValidator()
@@ -52,6 +52,7 @@ func setupRouter() *gin.Engine {
 	})
 	// 全局中间件
 	r.Use(middleware.ErrorHandler())
+	r.Use(middleware.Cors())
 	route.ApiRoutes(r, enforcer)
 
 	err = seed.InitSeed(database.DB, r, enforcer)

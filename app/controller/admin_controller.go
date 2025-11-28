@@ -53,13 +53,19 @@ func (controller *AdminController) Register(c *gin.Context) {
 		controller.Error(c, 400, fmt.Errorf("注册失败：%w", err).Error())
 		return
 	}
-	dataID := response.DataId{ID: int(admin.ID)}
+	dataID := response.DataId{ID: admin.ID}
 	controller.Success(c, dataID)
 }
 
 func (controller *AdminController) Me(c *gin.Context) {
-	controller.adminService.Create(&model.Admin{})
-	controller.Success(c, "ttt")
+	adminId, _ := c.Get("admin_id")
+	admin, _ := controller.adminService.GetById(adminId.(uint))
+	var response response.MeResponse
+	copier.Copy(&response, &admin)
+
+	// 补充当前账号对应角色的菜单
+	
+	controller.Success(c, response)
 }
 
 func (controller *AdminController) Page(c *gin.Context) {
@@ -118,7 +124,7 @@ func (controller *AdminController) Store(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, fmt.Errorf("新增失败：%w", err).Error())
 		return
 	}
-	dataID := response.DataId{ID: int(admin.ID)}
+	dataID := response.DataId{ID: admin.ID}
 	controller.Success(c, dataID)
 
 }

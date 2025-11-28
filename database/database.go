@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/maxlcoder/homework-backend/config"
 	"github.com/maxlcoder/homework-backend/model"
-	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -14,7 +14,8 @@ import (
 var DB *gorm.DB
 
 func InitDB() error {
-	dsn := viper.Get("database.mysql.dsn").(string)
+	mysqlConfig := config.GetConfig().Database
+	dsn := mysqlConfig.Mysql.DNS
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
