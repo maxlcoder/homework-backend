@@ -9,10 +9,11 @@ import (
 	"github.com/jinzhu/copier"
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/controller"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/request"
+	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/response"
+	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/service"
 	base_request "github.com/maxlcoder/homework-backend/app/request"
-	"github.com/maxlcoder/homework-backend/app/response"
-	"github.com/maxlcoder/homework-backend/model"
+	base_response "github.com/maxlcoder/homework-backend/app/response"
 )
 
 type PickingCarController struct {
@@ -41,7 +42,7 @@ func (controller *PickingCarController) Page(c *gin.Context) {
 		return
 	}
 	// 分页相应
-	pageResponse := response.BuildPageResponse[model.PickingCar, *response.PickingCarResponse](pickingCars, count, pageRequest.Page, pageRequest.PerPage, response.NewPickingCarResponse)
+	pageResponse := base_response.BuildPageResponse[model.PickingCar, *response.PickingCarResponse](pickingCars, count, pageRequest.Page, pageRequest.PerPage, response.NewPickingCarResponse)
 
 	controller.Success(c, pageResponse)
 
@@ -88,7 +89,7 @@ func (controller *PickingCarController) Store(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, fmt.Errorf("新增失败：%w", err).Error())
 		return
 	}
-	dataID := response.DataId{ID: pickingCar.ID}
+	dataID := base_response.DataId{ID: pickingCar.ID}
 	controller.Success(c, dataID)
 
 }
@@ -121,7 +122,7 @@ func (controller *PickingCarController) Update(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, fmt.Errorf("新增失败：%w", err).Error())
 		return
 	}
-	dataID := response.DataId{ID: pickingCar.ID}
+	dataID := base_response.DataId{ID: pickingCar.ID}
 	controller.Success(c, dataID)
 }
 

@@ -1,0 +1,26 @@
+package contract
+
+import "github.com/gin-gonic/gin"
+
+// RouteModule 路由模块接口，每个模块需要实现此接口来注册自己的路由
+type RouteModule interface {
+	// RegisterRoutes 注册模块路由
+	// group: 路由组
+	// controllers: 控制器集合
+	RegisterRoutes(group *gin.RouterGroup, module interface{})
+	// Name 返回模块名称
+	Name() string
+}
+
+// ModuleInitializer 模块初始化器接口，用于自动初始化模块
+type ModuleInitializer interface {
+	// Init 初始化模块
+	// 返回: 模块控制器
+	Init() RouteModule
+}
+
+// ModuleAutoRegister 模块自动注册接口，模块需要实现此接口才能被自动注册
+type ModuleAutoRegister interface {
+	RouteModule
+	ModuleInitializer
+}

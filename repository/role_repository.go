@@ -32,7 +32,7 @@ func (r *RoleRepositoryImpl) FindByName(name string) (*model.Role, error) {
 		return nil, errors.New("name is empty")
 	}
 	var role model.Role
-	if err := r.db.Where("name = ?", name).First(&role).Error; err != nil {
+	if err := r.DB.Where("name = ?", name).First(&role).Error; err != nil {
 		return nil, err
 	}
 	return &role, nil

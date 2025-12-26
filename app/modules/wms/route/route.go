@@ -1,94 +1,99 @@
 package route
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
+	"github.com/maxlcoder/homework-backend/app/contract"
 	wms_admin_controller "github.com/maxlcoder/homework-backend/app/modules/wms/admin/controller"
 	wms_api_controller "github.com/maxlcoder/homework-backend/app/modules/wms/api/controller"
-	repository "github.com/maxlcoder/homework-backend/app/modules/wms/repository"
+	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
 	wms_service "github.com/maxlcoder/homework-backend/app/modules/wms/service"
-	"github.com/maxlcoder/homework-backend/database"
 
 	"gorm.io/gorm"
 )
 
+// AdminController WMS管理后台控制器结构
 type AdminController struct {
 	PickingCarController *wms_admin_controller.PickingCarController
 	BinController        *wms_admin_controller.BinController
 	StaffController      *wms_admin_controller.StaffController
 }
 
+// ApiController WMS API控制器结构
 type ApiController struct {
 	BinController *wms_api_controller.BinController
 }
 
-// WmsModule WMS模块结构
+// WmsModule WMS模块结构，实现RouteModule和ModuleInitializer接口
 type WmsModule struct {
+	DB              *gorm.DB
 	AdminController *AdminController
 	ApiController   *ApiController
+	initialized     bool
 }
 
-// InitWmsModule 初始化WMS模块（导出方法）
-func InitWmsModule(db *gorm.DB) *WmsModule {
-	// 初始化仓库
-	pickingCarRepository := repository.NewPickingCarRepository(db)
-	binRepository := repository.NewBinRepository(db)
-	staffRepository := repository.NewStaffRepository(db)
-
-	// 初始化服务
-	pickingCarService := wms_service.NewPickingCarService(db, pickingCarRepository)
-	binService := wms_service.NewBinService(db, binRepository)
-	staffService := wms_service.NewStaffService(db, staffRepository)
-
-	// 初始化控制器
-	adminPickingCarController := wms_admin_controller.NewPickingCarController(pickingCarService)
-	adminBinController := wms_admin_controller.NewBinController(binService)
-	adminStaffController := wms_admin_controller.NewStaffController(staffService)
-	binController := wms_api_controller.NewBinController(binService)
-
-	return &WmsModule{
-		AdminController: &AdminController{
-			PickingCarController: adminPickingCarController,
-			BinController:        adminBinController,
-			StaffController:      adminStaffController,
-		},
-		ApiController: &ApiController{
-			BinController: binController,
-		},
-	}
-}
-
-// WMSApiRouteModule WMS API模块路由
-type WMSApiRouteModule struct{}
-
-// Name 返回模块名称
-func (m *WMSApiRouteModule) Name() string {
-	return "WMSApiRouteModule"
-}
-
-// WMSAutoModule WMS自动注册模块，实现RouteModule和ModuleInitializer接口
-type WMSAutoModule struct {
-	Module *WmsModule
-}
-
-// Name 返回模块名称
-func (m *WMSAutoModule) Name() string {
-	return "WMSAutoModule"
+// Name 返回模块名称，实现RouteModule接口
+func (m *WmsModule) Name() string {
+	return "WmsModule"
 }
 
 // Init 初始化模块，实现ModuleInitializer接口
-func (m *WMSAutoModule) Init() interface{} {
-	if m.Module == nil {
-		m.Module = InitWmsModule(database.DB)
+func (m *WmsModule) Init() contract.RouteModule {
+	if !m.initialized {
+		// 初始化仓库
+		pickingCarRepository := repository.NewPickingCarRepository(m.DB)
+		binRepository := repository.NewBinRepository(m.DB)
+		staffRepository := repository.NewStaffRepository(m.DB)
+
+		// 初始化服务
+		pickingCarService := wms_service.NewPickingCarService(m.DB, pickingCarRepository)
+		binService := wms_service.NewBinService(m.DB, binRepository)
+		staffService := wms_service.NewStaffService(m.DB, staffRepository)
+
+		// 初始化控制器
+		adminPickingCarController := wms_admin_controller.NewPickingCarController(pickingCarService)
+		adminBinController := wms_admin_controller.NewBinController(binService)
+		adminStaffController := wms_admin_controller.NewStaffController(staffService)
+		binController := wms_api_controller.NewBinController(binService)
+
+		// 设置控制器
+		m.AdminController = &AdminController{
+			PickingCarController: adminPickingCarController,
+			BinController:        adminBinController,
+			StaffController:      adminStaffController,
+		}
+		m.ApiController = &ApiController{
+			BinController: binController,
+		}
+		m.initialized = true
 	}
-	return m.Module.AdminController
+	return m
 }
 
 // RegisterRoutes 注册模块路由，实现RouteModule接口
-func (m *WMSAutoModule) RegisterRoutes(group *gin.RouterGroup) {
-	// 注册前台路由
-	m.Module.ApiController.RegisterRoutes(group)
-	// 注册管理路由
-	m.Module.AdminController.RegisterRoutes(group)
+func (m *WmsModule) RegisterRoutes(group *gin.RouterGroup, module interface{}) {
+	fmt.Println("Registering WMS Module routes")
+
+	// 确保模块已初始化
+	m.Init()
+
+	// 注册API路由
+	apiGroup := group.Group("/api/wms")
+	if m.ApiController != nil {
+		m.ApiController.RegisterRoutes(apiGroup)
+	}
+
+	// 注册Admin路由
+	adminGroup := group.Group("/admin/wms")
+	if m.AdminController != nil {
+		m.AdminController.RegisterRoutes(adminGroup)
+	}
+}
+
+// NewWmsModule 创建一个新的WMS模块实例（导出方法）
+func NewWmsModule(db *gorm.DB) *WmsModule {
+	return &WmsModule{DB: db}
 }
 
 // RegisterRoutes 为 ApiController 添加路由注册方法

@@ -23,19 +23,19 @@ func NewMenuRepository(db *gorm.DB) MenuRepository {
 }
 
 func (r *MenuRepositoryImpl) GetPermissionsByMenuId(id uint) ([]model.Permission, error) {
-	subQuery := r.db.Model(&model.MenuPermission{}).
+	subQuery := r.DB.Model(&model.MenuPermission{}).
 		Select("permission_id").
 		Where("menu_id = ?", id)
 	var permissions []model.Permission
-	r.db.Where("id IN (?)", subQuery).Find(&permissions)
+	r.DB.Where("id IN (?)", subQuery).Find(&permissions)
 	return permissions, nil
 }
 
 func (r *MenuRepositoryImpl) GetPermissionsByMenuIds(ids []uint) ([]model.Permission, error) {
-	subQuery := r.db.Model(&model.MenuPermission{}).
+	subQuery := r.DB.Model(&model.MenuPermission{}).
 		Select("permission_id").
 		Where("menu_id IN (?)", ids)
 	var permissions []model.Permission
-	r.db.Where("id IN (?)", subQuery).Find(&permissions)
+	r.DB.Where("id IN (?)", subQuery).Find(&permissions)
 	return permissions, nil
 }

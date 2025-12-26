@@ -2,11 +2,12 @@ package response
 
 import (
 	"github.com/jinzhu/copier"
+	"github.com/maxlcoder/homework-backend/app/response"
 	"github.com/maxlcoder/homework-backend/model"
 )
 
 type RoleResponse struct {
-	BaseResponse
+	response.BaseResponse
 	Name string `json:"name"`
 }
 

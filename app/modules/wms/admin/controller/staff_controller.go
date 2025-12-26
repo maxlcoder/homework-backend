@@ -12,6 +12,7 @@ import (
 	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/service"
 	base_request "github.com/maxlcoder/homework-backend/app/request"
+	base_response "github.com/maxlcoder/homework-backend/app/response"
 )
 
 type StaffController struct {
@@ -41,7 +42,7 @@ func (controller *StaffController) Page(c *gin.Context) {
 		return
 	}
 
-	pageResponse := response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage, response.NewStaffResponse)
+	pageResponse := base_response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage, response.NewStaffResponse)
 
 	controller.Success(c, pageResponse)
 }
@@ -62,7 +63,7 @@ func (controller *StaffController) Show(c *gin.Context) {
 		return
 	}
 
-	pageResponse := response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage, response.NewStaffResponse)
+	pageResponse := base_response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage, response.NewStaffResponse)
 
 	controller.Success(c, pageResponse)
 }
