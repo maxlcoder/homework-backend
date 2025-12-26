@@ -25,7 +25,7 @@ func NewAdminRoleRepository(db *gorm.DB) AdminRoleRepository {
 }
 
 func (r *AdminRoleRepositoryImpl) UpsertCreate(adminRole *model.AdminRole) error {
-	r.db.Clauses(clause.OnConflict{
+	r.DB.Clauses(clause.OnConflict{
 		UpdateAll: false,
 	}).Create(&model.AdminRole{
 		AdminId: adminRole.AdminId,

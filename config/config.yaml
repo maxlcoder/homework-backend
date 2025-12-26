@@ -1,6 +1,6 @@
 database:
   mysql:
-    dns: root:123456@tcp(127.0.0.1:3306)/homework?charset=utf8mb4&parseTime=True&loc=Local
+    dns:
 
 jwt:
   timeout: 86400s
@@ -11,3 +11,11 @@ default_password: Admin@123
 etcd:
   endpoints:
     - 127.0.0.1:2379
+
+kafka:
+  brokers:
+    - 127.0.0.1:9092
+  async: false
+  topics:
+    - test_topic
+    - order_created

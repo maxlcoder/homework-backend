@@ -1,110 +1,33 @@
 package route
 
 import (
-	"log"
-
-	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/maxlcoder/homework-backend/app/controller"
-	"github.com/maxlcoder/homework-backend/app/middleware"
-	"github.com/maxlcoder/homework-backend/app/route/auth"
-	"github.com/maxlcoder/homework-backend/database"
-	"github.com/maxlcoder/homework-backend/repository"
-	"github.com/maxlcoder/homework-backend/service"
 )
 
-// service 列表
-var (
-	userRepository      repository.UserRepository
-	adminRepository     repository.AdminRepository
-	adminRoleRepository repository.AdminRoleRepository
-	roleRepository      repository.RoleRepository
-	menuRepository      repository.MenuRepository
-	roleMenuRepository  repository.RoleMenuRepository
-)
-
-// service 列表
-var (
-	userService  *service.UserService
-	adminService *service.AdminService
-	roleService  *service.RoleService
-)
-
-var (
-	apiController   *ApiControllers
-	adminController *AdminControllers
-)
+// 简单的Admin模块初始化函数
+func initAdminModule(group *gin.RouterGroup, controllers interface{}) {
+	// 实现简单的管理员路由
+	group.GET("/admin", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "Admin module"})
+	})
+}
 
 func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
+	// 1. 注册全局模块
+	RegisterGlobalModuleFunc("AdminModule", initAdminModule)
 
-	// 注册中间件
-	initRepository()
-	initService(enforcer)
-	initController()
-
-	// auth 中间件
-	authMiddleware, err := jwt.New(auth.InitJwtParams())
-	if err != nil {
-		log.Fatal("JWT Error:" + err.Error())
-	}
-	// 初始化
-	r.Use(auth.HandlerMiddleware(authMiddleware))
-
-	adminAuthMiddleware, err := jwt.New(auth.InitAdminJwtParams())
-	if err != nil {
-		log.Fatal("JWT Error:" + err.Error())
-	}
-
-	// 注册 API 路由
+	// 2. 创建API路由组
 	api := r.Group("/api")
-	RegisterUserRoute(api, apiController, authMiddleware)
-	api.Use(authMiddleware.MiddlewareFunc()) // 验证 JWT 中间件
-	RegisterUserAuthRoute(api, apiController)
 
-	// 注册 Admin 路由
-	adminApi := r.Group("/admin")
-	RegisterAdminRoute(adminApi, adminController, adminAuthMiddleware)
-	adminApi.Use(adminAuthMiddleware.MiddlewareFunc())
-	adminApi.Use(middleware.CasbinMiddleware(enforcer))
-	RegisterAdminAuthRoute(adminApi, adminController)
-}
+	// 3. 创建Admin路由组
+	admin := r.Group("/admin")
 
-// repository 初始化
-func initRepository() {
-	userRepository = repository.NewUserRepository(database.DB)
-	adminRepository = repository.NewAdminRepository(database.DB)
-	adminRoleRepository = repository.NewAdminRoleRepository(database.DB)
-	roleRepository = repository.NewRoleRepository(database.DB)
-	menuRepository = repository.NewMenuRepository(database.DB)
-	roleMenuRepository = repository.NewRoleMenuRepository(database.DB)
-}
+	// 4. 自动注册所有全局模块路由
+	GlobalRouteRegistry.RegisterAllRoutes(admin, nil)
 
-// service 初始化
-func initService(enforcer *casbin.Enforcer) {
-	userService = &service.UserService{
-		UserRepository: userRepository,
-	}
-	adminService = service.NewAdminService(
-		database.DB,
-		adminRepository,
-		roleRepository,
-		adminRoleRepository)
-	roleService = service.NewRoleService(
-		database.DB,
-		enforcer,
-		roleRepository,
-		menuRepository,
-		roleMenuRepository)
-}
-
-func initController() {
-	apiController = &ApiControllers{
-		UserController: controller.NewUserController(userService),
-	}
-	adminController = &AdminControllers{
-		UserController:  controller.NewAdminUserController(adminService, userService),
-		AdminController: controller.NewAdminController(adminService),
-		RoleController:  controller.NewRoleController(roleService),
-	}
+	// 5. 示例：注册一个简单的API路由
+	api.GET("/hello", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "Hello from API"})
+	})
 }

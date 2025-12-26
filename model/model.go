@@ -73,6 +73,8 @@ func Models() []interface{} {
 		&AssignmentItem{},
 		&StudentAssignment{},
 		&StudentAnswer{},
+
+		// 初始化 wms 数据库
 	}
 }
 

@@ -1,0 +1,70 @@
+package service
+
+import (
+	"fmt"
+
+	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
+	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
+	"github.com/maxlcoder/homework-backend/app/request"
+	base_repository "github.com/maxlcoder/homework-backend/repository"
+	"gorm.io/gorm"
+)
+
+type PickingBasketServiceInterface interface {
+	Page(pageRequest request.PageRequest) ([]model.PickingBasket, int64, error)
+	Create(model *model.PickingBasket) (*model.PickingBasket, error)
+	Update(model *model.PickingBasket) (*model.PickingBasket, error)
+	Delete(id uint) error
+	FindById(id uint) (*model.PickingBasket, error)
+}
+
+type PickingBasketService struct {
+	db                      *gorm.DB
+	PickingBasketRepository repository.PickingBasketRepository
+}
+
+func NewPickingBasketService(db *gorm.DB, pickingBasketRepository repository.PickingBasketRepository) PickingBasketServiceInterface {
+	return &PickingBasketService{
+		db:                      db,
+		PickingBasketRepository: pickingBasketRepository,
+	}
+}
+
+func (u *PickingBasketService) Page(pageRequest request.PageRequest) ([]model.PickingBasket, int64, error) {
+	// TODO: 实现分页查询逻辑
+	return nil, 0, nil
+}
+
+func (u *PickingBasketService) Create(pickingBasket *model.PickingBasket) (*model.PickingBasket, error) {
+	// 判断是否存在已经适用的名称
+	filer := model.PickingBasketFilter{
+		Code: &pickingBasket.Code,
+	}
+	cond := base_repository.ConditionScope{
+		StructCond: filer,
+	}
+	find, _ := u.PickingBasketRepository.FindBy(cond)
+	if find != nil {
+		return nil, fmt.Errorf("当前拣货框编号不可用，请检查")
+	}
+	err := u.PickingBasketRepository.Create(pickingBasket, nil)
+	if err != nil {
+		return nil, fmt.Errorf("拣货框创建失败: %w", err)
+	}
+	return pickingBasket, nil
+}
+
+func (u *PickingBasketService) Update(pickingBasket *model.PickingBasket) (*model.PickingBasket, error) {
+	// TODO: 实现更新逻辑
+	return nil, nil
+}
+
+func (u *PickingBasketService) Delete(id uint) error {
+	// TODO: 实现删除逻辑
+	return nil
+}
+
+func (u *PickingBasketService) FindById(id uint) (*model.PickingBasket, error) {
+	// TODO: 实现根据ID查询逻辑
+	return nil, nil
+}

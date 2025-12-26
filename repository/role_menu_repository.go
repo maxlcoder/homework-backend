@@ -23,7 +23,7 @@ func NewRoleMenuRepository(db *gorm.DB) RoleMenuRepository {
 }
 
 func (r *RoleMenuRepositoryImpl) UpsertCreate(roleMenu *model.RoleMenu) error {
-	r.db.Clauses(clause.OnConflict{
+	r.DB.Clauses(clause.OnConflict{
 		UpdateAll: false,
 	}).Create(&model.RoleMenu{
 		RoleID: roleMenu.RoleID,

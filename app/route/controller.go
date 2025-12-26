@@ -1,15 +1,21 @@
 package route
 
 import (
-	"github.com/maxlcoder/homework-backend/app/controller"
+	admin_controller "github.com/maxlcoder/homework-backend/app/modules/core/admin/controller"
+	api_controller "github.com/maxlcoder/homework-backend/app/modules/core/api/controller"
+	wms_admin_controller "github.com/maxlcoder/homework-backend/app/modules/wms/admin/controller"
 )
 
 type ApiControllers struct {
-	UserController *controller.UserController
+	UserController *api_controller.UserController
 }
 
 type AdminControllers struct {
-	UserController  *controller.AdminUserController
-	AdminController *controller.AdminController
-	RoleController  *controller.RoleController
+	UserController  *admin_controller.AdminUserController
+	AdminController *admin_controller.AdminController
+	RoleController  *admin_controller.RoleController
+
+	PickingCarController *wms_admin_controller.PickingCarController
+	BinController        *wms_admin_controller.BinController
+	StaffController      *wms_admin_controller.StaffController
 }
