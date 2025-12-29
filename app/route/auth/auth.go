@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -30,12 +31,10 @@ var (
 	identityKey = "id"
 )
 
-func HandlerMiddleware(authMiddleware *jwt.GinJWTMiddleware) gin.HandlerFunc {
-	return func(context *gin.Context) {
-		errInit := authMiddleware.MiddlewareInit()
-		if errInit != nil {
-			log.Fatal("authMiddleware.MiddlewareInit() Error:" + errInit.Error())
-		}
+func InitMiddleware(authMiddleware *jwt.GinJWTMiddleware) {
+	errInit := authMiddleware.MiddlewareInit()
+	if errInit != nil {
+		log.Fatal("authMiddleware.MiddlewareInit() Error:" + errInit.Error())
 	}
 }
 
@@ -169,6 +168,7 @@ func identityHandler() func(c *gin.Context) interface{} {
 			return nil
 		}
 		userType := claims["user_type"]
+		fmt.Println(userType)
 		userId := uint(userIdFloat)
 		switch userType {
 		case "User":

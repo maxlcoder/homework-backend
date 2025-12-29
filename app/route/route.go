@@ -28,11 +28,15 @@ func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 	if err != nil {
 		log.Fatal("JWT Error:" + err.Error())
 	}
+	// 初始 authMiddleware
+	auth.InitMiddleware(authMiddleware)
 
 	adminAuthMiddleware, err := jwt.New(auth.InitAdminJwtParams())
 	if err != nil {
 		log.Fatal("JWT Error:" + err.Error())
 	}
+	// 初始 authMiddleware
+	auth.InitMiddleware(adminAuthMiddleware)
 
 	// 注册 Core 模块
 	RegisterModuleByName("CoreModule", &core_route.CoreModule{DB: database.DB, Enforcer: enforcer, ApiHandler: authMiddleware, AdminHandler: adminAuthMiddleware})
@@ -44,14 +48,14 @@ func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 	apiGroup := r.Group("/api")
 	apiAuthGroup := r.Group("/api")
 	// 添加系统整体中间件 - API组
-	apiAuthGroup.Use(auth.HandlerMiddleware(authMiddleware))
+	apiAuthGroup.Use(authMiddleware.MiddlewareFunc())
 	// 系统整体中间件 - 可以添加更多系统级中间件
 
 	// 管理后台路由组
 	adminGroup := r.Group("/admin")
 	adminAuthGroup := r.Group("/admin")
 	// 管理后台路由组可以应用管理员特定的中间件
-	adminAuthGroup.Use(auth.HandlerMiddleware(adminAuthMiddleware))
+	adminAuthGroup.Use(adminAuthMiddleware.MiddlewareFunc())
 	// 系统整体中间件 - 管理后台组
 	adminAuthGroup.Use(middleware.CasbinMiddleware(enforcer))
 
