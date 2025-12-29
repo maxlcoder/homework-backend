@@ -35,7 +35,7 @@ func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 	if err != nil {
 		log.Fatal("JWT Error:" + err.Error())
 	}
-	// 初始 authMiddleware
+	// 初始 adminAuthMiddleware
 	auth.InitMiddleware(adminAuthMiddleware)
 
 	// 注册 Core 模块
