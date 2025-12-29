@@ -76,7 +76,7 @@ func (m *WmsModule) Init() contract.RouteModule {
 }
 
 // RegisterRoutes 注册模块路由，实现RouteModule接口
-func (m *WmsModule) RegisterRoutes(apiGroup *gin.RouterGroup, adminGroup *gin.RouterGroup, module interface{}) {
+func (m *WmsModule) RegisterRoutes(apiGroup *gin.RouterGroup, apiAuthGroup *gin.RouterGroup, adminGroup *gin.RouterGroup, adminAuthGroup *gin.RouterGroup, module interface{}) {
 	fmt.Println("Registering WMS Module routes")
 
 	// 确保模块已初始化
@@ -84,18 +84,24 @@ func (m *WmsModule) RegisterRoutes(apiGroup *gin.RouterGroup, adminGroup *gin.Ro
 
 	// 注册模块接口
 	apiGroup = apiGroup.Group("/wms")
+	apiAuthGroup = apiAuthGroup.Group("/wms")
 	// 添加WMS API模块级中间件
 	apiGroup.Use(module_middleware.Logger())
+	apiAuthGroup.Use(module_middleware.Logger())
 	if m.ApiController != nil {
-		m.ApiController.RegisterRoutes(apiGroup)
+		m.ApiController.RegisterRoutes(apiGroup, apiAuthGroup)
 	}
 
 	// 注册Admin路由 - 后台接口
 	adminGroup = adminGroup.Group("/wms")
+	adminAuthGroup = adminAuthGroup.Group("/wms")
 	// 应用Admin子模块的中间件
 	adminGroup.Use(module_middleware.Logger())
+	adminAuthGroup.Use(module_middleware.Logger())
 	if m.AdminController != nil {
-		m.AdminController.RegisterRoutes(adminGroup)
+
+		// 注册需要认证的路由
+		m.AdminController.RegisterRoutes(adminGroup, adminAuthGroup)
 	}
 }
 
@@ -105,37 +111,37 @@ func NewWmsModule(db *gorm.DB) *WmsModule {
 }
 
 // RegisterRoutes 为 ApiController 添加路由注册方法
-func (ctrl *ApiController) RegisterRoutes(group *gin.RouterGroup) {
+func (ctrl *ApiController) RegisterRoutes(group *gin.RouterGroup, authGroup *gin.RouterGroup) {
 	// 注册中间件
-	group.Use(api_middleware.Logger())
+	authGroup.Use(api_middleware.Logger())
 
 	// 普通接口 - 继承父路由组的中间件
-	group.GET("bins", ctrl.BinController.Page) // 分页列表、
+	authGroup.GET("bins", ctrl.BinController.Page) // 分页列表、
 }
 
 // RegisterRoutes 为 AdminController 添加路由注册方法
-func (ctrl *AdminController) RegisterRoutes(group *gin.RouterGroup) {
+func (ctrl *AdminController) RegisterRoutes(group *gin.RouterGroup, authGroup *gin.RouterGroup) {
 	// 注册中间件
-	group.Use(admin_middleware.Logger())
+	authGroup.Use(admin_middleware.Logger())
 
 	// ------------ 拣货车管理 ------------
-	group.GET("picking-cars", ctrl.PickingCarController.Page)           // 分页列表
-	group.GET("picking-cars/:id", ctrl.PickingCarController.Show)       // 详情
-	group.POST("picking-cars", ctrl.PickingCarController.Store)         // 新增
-	group.PUT("picking-cars/:id", ctrl.PickingCarController.Update)     // 更新
-	group.DELETE("picking-cars/:id", ctrl.PickingCarController.Destroy) // 删除
+	authGroup.GET("picking-cars", ctrl.PickingCarController.Page)           // 分页列表
+	authGroup.GET("picking-cars/:id", ctrl.PickingCarController.Show)       // 详情
+	authGroup.POST("picking-cars", ctrl.PickingCarController.Store)         // 新增
+	authGroup.PUT("picking-cars/:id", ctrl.PickingCarController.Update)     // 更新
+	authGroup.DELETE("picking-cars/:id", ctrl.PickingCarController.Destroy) // 删除
 
 	// ------------ 库位管理 ------------
-	group.GET("bins", ctrl.BinController.Page)           // 分页列表
-	group.GET("bins/:id", ctrl.BinController.Show)       // 详情
-	group.POST("bins", ctrl.BinController.Store)         // 新增
-	group.PUT("bins/:id", ctrl.BinController.Update)     // 更新
-	group.DELETE("bins/:id", ctrl.BinController.Destroy) // 删除
+	authGroup.GET("bins", ctrl.BinController.Page)           // 分页列表
+	authGroup.GET("bins/:id", ctrl.BinController.Show)       // 详情
+	authGroup.POST("bins", ctrl.BinController.Store)         // 新增
+	authGroup.PUT("bins/:id", ctrl.BinController.Update)     // 更新
+	authGroup.DELETE("bins/:id", ctrl.BinController.Destroy) // 删除
 
 	// ------------ 仓库人员管理 ------------
-	group.GET("staffs", ctrl.StaffController.Page)           // 分页列表
-	group.GET("staffs/:id", ctrl.StaffController.Show)       // 详情
-	group.POST("staffs", ctrl.StaffController.Store)         // 新增
-	group.PUT("staffs/:id", ctrl.StaffController.Update)     // 更新
-	group.DELETE("staffs/:id", ctrl.StaffController.Destroy) // 删除
+	authGroup.GET("staffs", ctrl.StaffController.Page)           // 分页列表
+	authGroup.GET("staffs/:id", ctrl.StaffController.Show)       // 详情
+	authGroup.POST("staffs", ctrl.StaffController.Store)         // 新增
+	authGroup.PUT("staffs/:id", ctrl.StaffController.Update)     // 更新
+	authGroup.DELETE("staffs/:id", ctrl.StaffController.Destroy) // 删除
 }

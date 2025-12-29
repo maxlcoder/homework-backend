@@ -97,7 +97,7 @@ func RegisterModuleByName(name string, module RouteModule) {
 // name: 模块名称
 // group: 路由组
 // 返回: 是否成功注册
-func AutoRegisterModule(name string, apiGroup *gin.RouterGroup, adminGroup *gin.RouterGroup) bool {
+func AutoRegisterModule(name string, apiGroup *gin.RouterGroup, apiAuthGroup *gin.RouterGroup, adminGroup *gin.RouterGroup, adminAuthGroup *gin.RouterGroup) bool {
 	registryMutex.RLock()
 	entry, exists := moduleRegistry[name]
 	registryMutex.RUnlock()
@@ -112,7 +112,7 @@ func AutoRegisterModule(name string, apiGroup *gin.RouterGroup, adminGroup *gin.
 	}
 
 	// 注册模块路由
-	entry.Module.RegisterRoutes(apiGroup, adminGroup, entry.Module)
+	entry.Module.RegisterRoutes(apiGroup, apiAuthGroup, adminGroup, adminAuthGroup, entry.Module)
 
 	// 注册完成后移除对应的注册表项
 	registryMutex.Lock()
@@ -125,7 +125,7 @@ func AutoRegisterModule(name string, apiGroup *gin.RouterGroup, adminGroup *gin.
 
 // AutoRegisterAllModules 自动注册所有已注册的模块路由
 // group: 路由组
-func AutoRegisterAllModules(apiGroup *gin.RouterGroup, adminGroup *gin.RouterGroup) {
+func AutoRegisterAllModules(apiGroup *gin.RouterGroup, apiAuthGroup *gin.RouterGroup, adminGroup *gin.RouterGroup, adminAuthGroup *gin.RouterGroup) {
 	// 先获取所有模块名称和条目
 	registryMutex.RLock()
 	moduleNames := make([]string, 0, len(moduleRegistry))
@@ -143,7 +143,7 @@ func AutoRegisterAllModules(apiGroup *gin.RouterGroup, adminGroup *gin.RouterGro
 		}
 
 		// 注册模块路由
-		entry.Module.RegisterRoutes(apiGroup, adminGroup, entry.Module)
+		entry.Module.RegisterRoutes(apiGroup, apiAuthGroup, adminGroup, adminAuthGroup, entry.Module)
 	}
 
 	// 注册完成后移除所有已处理的模块条目
