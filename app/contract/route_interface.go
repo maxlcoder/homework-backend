@@ -7,7 +7,7 @@ type RouteModule interface {
 	// RegisterRoutes 注册模块路由
 	// group: 路由组
 	// controllers: 控制器集合
-	RegisterRoutes(group *gin.RouterGroup, module interface{})
+	RegisterRoutes(apiGroup *gin.RouterGroup, adminGroup *gin.RouterGroup, module interface{})
 	// Name 返回模块名称
 	Name() string
 }

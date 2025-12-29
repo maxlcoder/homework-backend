@@ -15,16 +15,22 @@ type ModuleInitializer = contract.ModuleInitializer
 type ModuleAutoRegister = contract.ModuleAutoRegister
 
 // RouteModuleFunc 路由模块函数类型，用于简化模块注册
-type RouteModuleFunc func(group *gin.RouterGroup, controllers interface{})
+type RouteModuleFunc func(group *gin.RouterGroup, module interface{})
 
 // RegisterRoutes 实现 RouteModule 接口
-func (f RouteModuleFunc) RegisterRoutes(group *gin.RouterGroup, controllers interface{}) {
-	f(group, controllers)
+func (f RouteModuleFunc) RegisterRoutes(group *gin.RouterGroup, module interface{}) {
+	f(group, module)
 }
 
 // Name 实现 RouteModule 接口
 func (f RouteModuleFunc) Name() string {
 	return "RouteModuleFunc"
+}
+
+// Middleware 实现 RouteModule 接口
+func (f RouteModuleFunc) Middleware() []gin.HandlerFunc {
+	// 默认返回空列表，表示不使用特定的中间件
+	return []gin.HandlerFunc{}
 }
 
 // ModuleRegister 模块注册器，用于管理和注册所有路由模块
@@ -91,8 +97,7 @@ func RegisterModuleByName(name string, module RouteModule) {
 // name: 模块名称
 // group: 路由组
 // 返回: 是否成功注册
-func AutoRegisterModule(name string, group *gin.RouterGroup) bool {
-	fmt.Printf("AutoRegister module: %s\n", name)
+func AutoRegisterModule(name string, apiGroup *gin.RouterGroup, adminGroup *gin.RouterGroup) bool {
 	registryMutex.RLock()
 	entry, exists := moduleRegistry[name]
 	registryMutex.RUnlock()
@@ -107,7 +112,7 @@ func AutoRegisterModule(name string, group *gin.RouterGroup) bool {
 	}
 
 	// 注册模块路由
-	entry.Module.RegisterRoutes(group, entry.Module)
+	entry.Module.RegisterRoutes(apiGroup, adminGroup, entry.Module)
 
 	// 注册完成后移除对应的注册表项
 	registryMutex.Lock()
@@ -120,7 +125,7 @@ func AutoRegisterModule(name string, group *gin.RouterGroup) bool {
 
 // AutoRegisterAllModules 自动注册所有已注册的模块路由
 // group: 路由组
-func AutoRegisterAllModules(group *gin.RouterGroup) {
+func AutoRegisterAllModules(apiGroup *gin.RouterGroup, adminGroup *gin.RouterGroup) {
 	// 先获取所有模块名称和条目
 	registryMutex.RLock()
 	moduleNames := make([]string, 0, len(moduleRegistry))
@@ -136,8 +141,9 @@ func AutoRegisterAllModules(group *gin.RouterGroup) {
 		if entry.Initializer != nil && entry.Module == nil {
 			entry.Module = entry.Initializer.Init()
 		}
+
 		// 注册模块路由
-		entry.Module.RegisterRoutes(group, entry.Module)
+		entry.Module.RegisterRoutes(apiGroup, adminGroup, entry.Module)
 	}
 
 	// 注册完成后移除所有已处理的模块条目

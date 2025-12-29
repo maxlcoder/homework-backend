@@ -8,7 +8,11 @@ import (
 	wms_admin_controller "github.com/maxlcoder/homework-backend/app/modules/wms/admin/controller"
 	wms_api_controller "github.com/maxlcoder/homework-backend/app/modules/wms/api/controller"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
-	wms_service "github.com/maxlcoder/homework-backend/app/modules/wms/service"
+	"github.com/maxlcoder/homework-backend/app/modules/wms/service"
+
+	admin_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/admin/middleware"
+	api_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/api/middleware"
+	module_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/middleware"
 
 	"gorm.io/gorm"
 )
@@ -47,9 +51,9 @@ func (m *WmsModule) Init() contract.RouteModule {
 		staffRepository := repository.NewStaffRepository(m.DB)
 
 		// 初始化服务
-		pickingCarService := wms_service.NewPickingCarService(m.DB, pickingCarRepository)
-		binService := wms_service.NewBinService(m.DB, binRepository)
-		staffService := wms_service.NewStaffService(m.DB, staffRepository)
+		pickingCarService := service.NewPickingCarService(m.DB, pickingCarRepository)
+		binService := service.NewBinService(m.DB, binRepository)
+		staffService := service.NewStaffService(m.DB, staffRepository)
 
 		// 初始化控制器
 		adminPickingCarController := wms_admin_controller.NewPickingCarController(pickingCarService)
@@ -72,20 +76,24 @@ func (m *WmsModule) Init() contract.RouteModule {
 }
 
 // RegisterRoutes 注册模块路由，实现RouteModule接口
-func (m *WmsModule) RegisterRoutes(group *gin.RouterGroup, module interface{}) {
+func (m *WmsModule) RegisterRoutes(apiGroup *gin.RouterGroup, adminGroup *gin.RouterGroup, module interface{}) {
 	fmt.Println("Registering WMS Module routes")
 
 	// 确保模块已初始化
 	m.Init()
 
-	// 注册API路由
-	apiGroup := group.Group("/api/wms")
+	// 注册模块接口
+	apiGroup = apiGroup.Group("/wms")
+	// 添加WMS API模块级中间件
+	apiGroup.Use(module_middleware.Logger())
 	if m.ApiController != nil {
 		m.ApiController.RegisterRoutes(apiGroup)
 	}
 
-	// 注册Admin路由
-	adminGroup := group.Group("/admin/wms")
+	// 注册Admin路由 - 后台接口
+	adminGroup = adminGroup.Group("/wms")
+	// 应用Admin子模块的中间件
+	adminGroup.Use(module_middleware.Logger())
 	if m.AdminController != nil {
 		m.AdminController.RegisterRoutes(adminGroup)
 	}
@@ -98,11 +106,18 @@ func NewWmsModule(db *gorm.DB) *WmsModule {
 
 // RegisterRoutes 为 ApiController 添加路由注册方法
 func (ctrl *ApiController) RegisterRoutes(group *gin.RouterGroup) {
-	group.GET("bins", ctrl.BinController.Page) // 分页列表
+	// 注册中间件
+	group.Use(api_middleware.Logger())
+
+	// 普通接口 - 继承父路由组的中间件
+	group.GET("bins", ctrl.BinController.Page) // 分页列表、
 }
 
 // RegisterRoutes 为 AdminController 添加路由注册方法
 func (ctrl *AdminController) RegisterRoutes(group *gin.RouterGroup) {
+	// 注册中间件
+	group.Use(admin_middleware.Logger())
+
 	// ------------ 拣货车管理 ------------
 	group.GET("picking-cars", ctrl.PickingCarController.Page)           // 分页列表
 	group.GET("picking-cars/:id", ctrl.PickingCarController.Show)       // 详情
