@@ -85,7 +85,7 @@ func (controller *AdminController) Page(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	pageResponse := base_response.BuildPageResponse[model.Admin, *response.AdminResponse](admins, total, pagination.Page, pagination.PerPage, response.NewAdminResponse)
+	pageResponse := base_response.BuildPageResponse[model.Admin, *response.AdminResponse](admins, total, pagination.Page, pagination.PerPage)
 	controller.Success(c, pageResponse)
 }
 

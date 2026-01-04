@@ -17,19 +17,19 @@ import (
 	base_response "github.com/maxlcoder/homework-backend/app/response"
 )
 
-type AdminPickingBasketController struct {
+type PickingBasketController struct {
 	controller.BaseController
 	// 集成服务
 	pickingBasketService service.PickingBasketServiceInterface
 }
 
-func NewAdminPickingBasketController(pickingBasketService service.PickingBasketServiceInterface) *AdminPickingBasketController {
-	return &AdminPickingBasketController{
+func NewPickingBasketController(pickingBasketService service.PickingBasketServiceInterface) *PickingBasketController {
+	return &PickingBasketController{
 		pickingBasketService: pickingBasketService,
 	}
 }
 
-func (controller *AdminPickingBasketController) Page(c *gin.Context) {
+func (controller *PickingBasketController) Page(c *gin.Context) {
 	var pageRequest base_request.PageRequest
 	if err := base_request.BindAndSetDefaults(c, &pageRequest); err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
@@ -43,13 +43,13 @@ func (controller *AdminPickingBasketController) Page(c *gin.Context) {
 		return
 	}
 	// 分页响应
-	pageResponse := base_response.BuildPageResponse[model.PickingBasket, *response.PickingBasketResponse](pickingBaskets, count, pageRequest.Page, pageRequest.PerPage, response.NewPickingBasketResponse)
+	pageResponse := base_response.BuildPageResponse[model.PickingBasket, *response.PickingBasketResponse](pickingBaskets, count, pageRequest.Page, pageRequest.PerPage)
 
 	controller.Success(c, pageResponse)
 
 }
 
-func (controller *AdminPickingBasketController) Show(c *gin.Context) {
+func (controller *PickingBasketController) Show(c *gin.Context) {
 
 	// 拣货框 id
 	idStr := c.Param("id")
@@ -69,7 +69,7 @@ func (controller *AdminPickingBasketController) Show(c *gin.Context) {
 
 }
 
-func (controller *AdminPickingBasketController) Store(c *gin.Context) {
+func (controller *PickingBasketController) Store(c *gin.Context) {
 	// 参数处理
 	var pickingBasketStoreRequest request.PickingBasketStoreRequest
 	if err := base_request.BindAndSetDefaults(c, &pickingBasketStoreRequest); err != nil {
@@ -95,7 +95,7 @@ func (controller *AdminPickingBasketController) Store(c *gin.Context) {
 
 }
 
-func (controller *AdminPickingBasketController) Update(c *gin.Context) {
+func (controller *PickingBasketController) Update(c *gin.Context) {
 	// 参数处理
 	var pickingBasketUpdateRequest request.PickingBasketUpdateRequest
 	if err := base_request.BindAndSetDefaults(c, &pickingBasketUpdateRequest); err != nil {
@@ -127,7 +127,7 @@ func (controller *AdminPickingBasketController) Update(c *gin.Context) {
 	controller.Success(c, dataID)
 }
 
-func (controller *AdminPickingBasketController) Destroy(c *gin.Context) {
+func (controller *PickingBasketController) Destroy(c *gin.Context) {
 	// 拣货框 id
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)

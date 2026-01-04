@@ -8,7 +8,7 @@ import (
 
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		fmt.Println("[WMS] Applying logger middleware")
+		fmt.Println("[Core] Applying logger middleware")
 		// 实际项目中可以添加日志记录逻辑
 		c.Next()
 	}

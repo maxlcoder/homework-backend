@@ -4,6 +4,7 @@ import (
 	"time"
 
 	base_model "github.com/maxlcoder/homework-backend/model"
+	"gorm.io/gorm"
 )
 
 // 仓库系统
@@ -62,6 +63,7 @@ func (s StaffState) IsValid() bool {
 // 仓库人员
 type Staff struct {
 	base_model.BaseModel
+	Code  string     `gorm:"size:60;not null;default:'';comment:编号"`
 	Name  string     `gorm:"size:60;not null;default:'';comment:姓名"`
 	State StaffState `gorm:"not null;default:1;comment:状态"` // 默认启用状态
 }
@@ -128,6 +130,13 @@ type PickingBasketFilter struct {
 	UpdatedAt *time.Time
 }
 
+// 拣货车和拣货框关联表
+type PickingCarBasket struct {
+	base_model.BaseModel
+	PickingCarId    uint `gorm:"not null;default:0;comment:拣货车 ID"`
+	PickingBasketId uint `gorm:"not null;default:0;comment:拣货篮 ID"`
+}
+
 // 拣货任务
 type PickingTask struct {
 	base_model.BaseModel
@@ -153,4 +162,16 @@ type PickingTaskBasketProduct struct {
 	SkuCode             string `gorm:"not null;default:'';comment:SKU CODE"`
 	Num                 int16  `gorm:"not null;default:0;comment:应拣数量"`
 	ActualNum           int16  `gorm:"not null;default:0;comment:实拣数量"`
+}
+
+func Models() []interface{} {
+	return []interface{}{
+		// 初始化 wms 数据库
+		&PickingCar{},
+		&PickingBasket{},
+	}
+}
+
+func AutoMigrate(db *gorm.DB) error {
+	return db.AutoMigrate(Models()...)
 }

@@ -42,7 +42,7 @@ func (controller *RoleController) Page(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	pageResponse := base_response.BuildPageResponse[model.Role, *response.RoleResponse](roles, total, pagination.Page, pagination.PerPage, response.NewRoleResponse)
+	pageResponse := base_response.BuildPageResponse[model.Role, *response.RoleResponse](roles, total, pagination.Page, pagination.PerPage)
 	controller.Success(c, pageResponse)
 
 }

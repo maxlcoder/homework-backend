@@ -2,7 +2,6 @@ package route
 
 import (
 	"github.com/gin-gonic/gin"
-	route "github.com/maxlcoder/homework-backend/app/route"
 )
 
 // OrderRouteModule 订单模块路由
@@ -20,7 +19,7 @@ func (m *OrderRouteModule) RegisterRoutes(group *gin.RouterGroup, controllers in
 	// if !ok {
 	// 	return
 	// }
-	
+
 	// 示例：注册订单相关路由
 	group.GET("orders", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "获取订单列表"})

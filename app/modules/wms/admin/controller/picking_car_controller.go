@@ -42,7 +42,7 @@ func (controller *PickingCarController) Page(c *gin.Context) {
 		return
 	}
 	// 分页相应
-	pageResponse := base_response.BuildPageResponse[model.PickingCar, *response.PickingCarResponse](pickingCars, count, pageRequest.Page, pageRequest.PerPage, response.NewPickingCarResponse)
+	pageResponse := base_response.BuildPageResponse[model.PickingCar, response.PickingCarResponse](pickingCars, count, pageRequest.Page, pageRequest.PerPage)
 
 	controller.Success(c, pageResponse)
 
@@ -64,7 +64,7 @@ func (controller *PickingCarController) Show(c *gin.Context) {
 		return
 	}
 
-	controller.Success(c, pickingCar)
+	controller.Success(c, response.ToPickingCarResponse(*pickingCar))
 
 }
 
@@ -127,6 +127,19 @@ func (controller *PickingCarController) Update(c *gin.Context) {
 }
 
 func (controller *PickingCarController) Destroy(c *gin.Context) {
+
+	// 参数处理
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, "参数转换失败")
+	}
+
+	// service 处理
+	err = controller.pickingCarService.Delete(uint(id))
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, fmt.Errorf("删除失败：%w", err).Error())
+		return
+	}
 
 	controller.Success(c, nil)
 

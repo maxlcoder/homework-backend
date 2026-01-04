@@ -38,10 +38,12 @@ func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 	// 初始 adminAuthMiddleware
 	auth.InitMiddleware(adminAuthMiddleware)
 
-	// 注册 Core 模块
+	// ---------- 此部分注入各个模块 BEGIN ----------
+	// 注册 Core 模块（会自动注册菜单提供者）
 	RegisterModuleByName("CoreModule", &core_route.CoreModule{DB: database.DB, Enforcer: enforcer, ApiHandler: authMiddleware, AdminHandler: adminAuthMiddleware})
-	// 注册WMS模块 - 它可以在自己的Middleware方法中定义特定的中间件
+	// 注册WMS模块 - 它可以在自己的Middleware方法中定义特定的中间件（会自动注册菜单提供者）
 	RegisterModuleByName("WmsModule", &wms_route.WmsModule{DB: database.DB})
+	// ---------- 此部分注入各个模块 END ----------
 
 	// 可以创建不同的路由组，应用不同的公用中间件
 	// 例如：API路由组
@@ -59,7 +61,6 @@ func ApiRoutes(r *gin.Engine, enforcer *casbin.Enforcer) {
 	// 系统整体中间件 - 管理后台组
 	adminAuthGroup.Use(middleware.CasbinMiddleware(enforcer))
 
-	// 自动注册所有模块路由
-	// 这里使用根路由组，模块会根据自己的Middleware方法应用特定的中间件
+	// 自动注册所有模块
 	AutoRegisterAllModules(apiGroup, apiAuthGroup, adminGroup, adminAuthGroup)
 }

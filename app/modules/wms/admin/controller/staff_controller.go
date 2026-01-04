@@ -42,7 +42,7 @@ func (controller *StaffController) Page(c *gin.Context) {
 		return
 	}
 
-	pageResponse := base_response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage, response.NewStaffResponse)
+	pageResponse := base_response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage)
 
 	controller.Success(c, pageResponse)
 }
@@ -63,7 +63,7 @@ func (controller *StaffController) Show(c *gin.Context) {
 		return
 	}
 
-	pageResponse := base_response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage, response.NewStaffResponse)
+	pageResponse := base_response.BuildPageResponse[model.Staff, *response.StaffResponse](staffs, total, pageRequest.Page, pageRequest.PerPage)
 
 	controller.Success(c, pageResponse)
 }

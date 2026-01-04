@@ -10,7 +10,7 @@ import (
 )
 
 // 使用contract包中的接口定义，保持向后兼容
-type RouteModule = contract.RouteModule
+type Module = contract.Module
 type ModuleInitializer = contract.ModuleInitializer
 type ModuleAutoRegister = contract.ModuleAutoRegister
 
@@ -35,27 +35,28 @@ func (f RouteModuleFunc) Middleware() []gin.HandlerFunc {
 
 // ModuleRegister 模块注册器，用于管理和注册所有路由模块
 type ModuleRegister struct {
-	modules []RouteModule
+	modules []Module
 	mu      sync.RWMutex
 }
 
 // NewModuleRegister 创建一个新的模块注册器
 func NewModuleRegister() *ModuleRegister {
 	return &ModuleRegister{
-		modules: make([]RouteModule, 0),
+		modules: make([]Module, 0),
 	}
 }
 
-// RegisterModule 注册一个路由模块
-func (r *ModuleRegister) RegisterModule(module RouteModule) {
+// RegisterModule 注册一个模块
+func (r *ModuleRegister) RegisterModule(module Module) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.modules = append(r.modules, module)
+
 }
 
 // ModuleEntry 模块条目，包含模块实例和初始化信息
 type ModuleEntry struct {
-	Module      RouteModule
+	Module      Module
 	Initializer ModuleInitializer
 }
 
@@ -76,14 +77,14 @@ func GetModuleRegistrySize() int {
 var GlobalRouteRegistry = NewModuleRegister()
 
 // RegisterGlobalModule 注册全局路由模块
-func RegisterGlobalModule(module RouteModule) {
+func RegisterGlobalModule(module Module) {
 	GlobalRouteRegistry.RegisterModule(module)
 }
 
 // RegisterModuleByName 注册模块到注册表
 // name: 模块名称
 // module: 模块实例
-func RegisterModuleByName(name string, module RouteModule) {
+func RegisterModuleByName(name string, module Module) {
 	registryMutex.Lock()
 	defer registryMutex.Unlock()
 	entry := &ModuleEntry{Module: module}
@@ -91,6 +92,11 @@ func RegisterModuleByName(name string, module RouteModule) {
 		entry.Initializer = initializer
 	}
 	moduleRegistry[name] = entry
+
+	// 同时注册菜单提供者（如果模块实现了MenuProvider接口）
+	if menuProvider, ok := module.(contract.MenuProvider); ok {
+		contract.RegisterMenuProvider(name, menuProvider)
+	}
 }
 
 // AutoRegisterModule 自动注册模块路由
@@ -109,6 +115,10 @@ func AutoRegisterModule(name string, apiGroup *gin.RouterGroup, apiAuthGroup *gi
 	// 如果模块有初始化器，先初始化模块
 	if entry.Initializer != nil && entry.Module == nil {
 		entry.Module = entry.Initializer.Init()
+		// 初始化后的模块实例也需要注册为菜单提供者
+		if menuProvider, ok := entry.Module.(contract.MenuProvider); ok {
+			contract.RegisterMenuProvider(name, menuProvider)
+		}
 	}
 
 	// 注册模块路由
@@ -136,10 +146,16 @@ func AutoRegisterAllModules(apiGroup *gin.RouterGroup, apiAuthGroup *gin.RouterG
 	}
 	registryMutex.RUnlock()
 
-	for _, entry := range entries {
+	for i, entry := range entries {
+		name := moduleNames[i]
 		// 如果模块有初始化器，先初始化模块
 		if entry.Initializer != nil && entry.Module == nil {
 			entry.Module = entry.Initializer.Init()
+			// 初始化后的模块实例也需要注册为菜单提供者
+			// 存在菜单注册菜单
+			if menuProvider, ok := entry.Module.(contract.MenuProvider); ok {
+				contract.RegisterMenuProvider(name, menuProvider)
+			}
 		}
 
 		// 注册模块路由

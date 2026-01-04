@@ -7,8 +7,10 @@ import (
 	"github.com/maxlcoder/homework-backend/app/contract"
 	wms_admin_controller "github.com/maxlcoder/homework-backend/app/modules/wms/admin/controller"
 	wms_api_controller "github.com/maxlcoder/homework-backend/app/modules/wms/api/controller"
+	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/service"
+	base_model "github.com/maxlcoder/homework-backend/model"
 
 	admin_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/admin/middleware"
 	api_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/api/middleware"
@@ -19,9 +21,10 @@ import (
 
 // AdminController WMS管理后台控制器结构
 type AdminController struct {
-	PickingCarController *wms_admin_controller.PickingCarController
-	BinController        *wms_admin_controller.BinController
-	StaffController      *wms_admin_controller.StaffController
+	PickingCarController    *wms_admin_controller.PickingCarController
+	PickingBasketController *wms_admin_controller.PickingBasketController
+	BinController           *wms_admin_controller.BinController
+	StaffController         *wms_admin_controller.StaffController
 }
 
 // ApiController WMS API控制器结构
@@ -42,30 +45,294 @@ func (m *WmsModule) Name() string {
 	return "WmsModule"
 }
 
+// GetMenus 返回WMS模块的菜单定义，实现MenuProvider接口
+func (m *WmsModule) GetMenus() []base_model.Menu {
+	return []base_model.Menu{
+		{
+			Number: "wms-management",
+			Name:   "WMS管理",
+			Sort:   2,
+			Children: []*base_model.Menu{
+				{
+					Number: "bin-management",
+					Name:   "库位管理",
+					Children: []*base_model.Menu{
+						{
+							Number: "bin-list",
+							Name:   "列表",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "列表",
+									PATH:   "/admin/wms/bins",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "bin-add",
+							Name:   "新增",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "新增",
+									PATH:   "/admin/wms/bins",
+									Method: "POST",
+								},
+							},
+						},
+						{
+							Number: "bin-update",
+							Name:   "更新",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "更新",
+									PATH:   "/admin/wms/bins/:id",
+									Method: "PUT",
+								},
+							},
+						},
+						{
+							Number: "bin-detail",
+							Name:   "详情",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "详情",
+									PATH:   "/admin/wms/bins/:id",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "bin-delete",
+							Name:   "删除",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "删除",
+									PATH:   "/admin/wms/bins/:id",
+									Method: "DELETE",
+								},
+							},
+						},
+					},
+				},
+				{
+					Number: "picking-car-management",
+					Name:   "拣货车辆管理",
+					Children: []*base_model.Menu{
+						{
+							Number: "picking-car-list",
+							Name:   "列表",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "列表",
+									PATH:   "/admin/wms/picking-cars",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "picking-car-add",
+							Name:   "新增",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "新增",
+									PATH:   "/admin/wms/picking-cars",
+									Method: "POST",
+								},
+							},
+						},
+						{
+							Number: "picking-car-update",
+							Name:   "更新",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "更新",
+									PATH:   "/admin/wms/picking-cars/:id",
+									Method: "PUT",
+								},
+							},
+						},
+						{
+							Number: "picking-car-detail",
+							Name:   "详情",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "详情",
+									PATH:   "/admin/wms/picking-cars/:id",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "picking-car-delete",
+							Name:   "删除",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "删除",
+									PATH:   "/admin/wms/picking-cars/:id",
+									Method: "DELETE",
+								},
+							},
+						},
+					},
+				},
+				{
+					Number: "staff-management",
+					Name:   "员工管理",
+					Children: []*base_model.Menu{
+						{
+							Number: "staff-list",
+							Name:   "列表",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "列表",
+									PATH:   "/admin/wms/staff",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "staff-add",
+							Name:   "新增",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "新增",
+									PATH:   "/admin/wms/staff",
+									Method: "POST",
+								},
+							},
+						},
+						{
+							Number: "staff-update",
+							Name:   "更新",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "更新",
+									PATH:   "/admin/wms/staff/:id",
+									Method: "PUT",
+								},
+							},
+						},
+						{
+							Number: "staff-detail",
+							Name:   "详情",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "详情",
+									PATH:   "/admin/wms/staff/:id",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "staff-delete",
+							Name:   "删除",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "删除",
+									PATH:   "/admin/wms/staff/:id",
+									Method: "DELETE",
+								},
+							},
+						},
+					},
+				},
+				{
+					Number: "picking-basket-management",
+					Name:   "拣货篮管理",
+					Children: []*base_model.Menu{
+						{
+							Number: "picking-basket-list",
+							Name:   "列表",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "列表",
+									PATH:   "/admin/wms/picking-baskets",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "picking-basket-add",
+							Name:   "新增",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "新增",
+									PATH:   "/admin/wms/picking-baskets",
+									Method: "POST",
+								},
+							},
+						},
+						{
+							Number: "picking-basket-update",
+							Name:   "更新",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "更新",
+									PATH:   "/admin/wms/picking-baskets/:id",
+									Method: "PUT",
+								},
+							},
+						},
+						{
+							Number: "picking-basket-detail",
+							Name:   "详情",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "详情",
+									PATH:   "/admin/wms/picking-baskets/:id",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "picking-basket-delete",
+							Name:   "删除",
+							Permissions: []*base_model.Permission{
+								{
+									Name:   "删除",
+									PATH:   "/admin/wms/picking-baskets/:id",
+									Method: "DELETE",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 // Init 初始化模块，实现ModuleInitializer接口
-func (m *WmsModule) Init() contract.RouteModule {
+func (m *WmsModule) Init() contract.Module {
 	if !m.initialized {
+		// 初始化表格
+		model.AutoMigrate(m.DB)
+
 		// 初始化仓库
 		pickingCarRepository := repository.NewPickingCarRepository(m.DB)
+		pickingBasketRepository := repository.NewPickingBasketRepository(m.DB)
 		binRepository := repository.NewBinRepository(m.DB)
 		staffRepository := repository.NewStaffRepository(m.DB)
 
 		// 初始化服务
 		pickingCarService := service.NewPickingCarService(m.DB, pickingCarRepository)
+		pickingBasketService := service.NewPickingBasketService(m.DB, pickingBasketRepository)
 		binService := service.NewBinService(m.DB, binRepository)
 		staffService := service.NewStaffService(m.DB, staffRepository)
 
 		// 初始化控制器
 		adminPickingCarController := wms_admin_controller.NewPickingCarController(pickingCarService)
+		adminPickingBasketController := wms_admin_controller.NewPickingBasketController(pickingBasketService)
 		adminBinController := wms_admin_controller.NewBinController(binService)
 		adminStaffController := wms_admin_controller.NewStaffController(staffService)
 		binController := wms_api_controller.NewBinController(binService)
 
 		// 设置控制器
 		m.AdminController = &AdminController{
-			PickingCarController: adminPickingCarController,
-			BinController:        adminBinController,
-			StaffController:      adminStaffController,
+			PickingCarController:    adminPickingCarController,
+			PickingBasketController: adminPickingBasketController,
+			BinController:           adminBinController,
+			StaffController:         adminStaffController,
 		}
 		m.ApiController = &ApiController{
 			BinController: binController,
@@ -130,6 +397,13 @@ func (ctrl *AdminController) RegisterRoutes(group *gin.RouterGroup, authGroup *g
 	authGroup.POST("picking-cars", ctrl.PickingCarController.Store)         // 新增
 	authGroup.PUT("picking-cars/:id", ctrl.PickingCarController.Update)     // 更新
 	authGroup.DELETE("picking-cars/:id", ctrl.PickingCarController.Destroy) // 删除
+
+	// ------------ 拣货篮管理 ------------
+	authGroup.GET("picking-baskets", ctrl.PickingBasketController.Page)           // 分页列表
+	authGroup.GET("picking-baskets/:id", ctrl.PickingBasketController.Show)       // 详情
+	authGroup.POST("picking-baskets", ctrl.PickingBasketController.Store)         // 新增
+	authGroup.PUT("picking-baskets/:id", ctrl.PickingBasketController.Update)     // 更新
+	authGroup.DELETE("picking-baskets/:id", ctrl.PickingBasketController.Destroy) // 删除
 
 	// ------------ 库位管理 ------------
 	authGroup.GET("bins", ctrl.BinController.Page)           // 分页列表
