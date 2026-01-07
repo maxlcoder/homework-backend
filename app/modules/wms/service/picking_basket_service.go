@@ -3,15 +3,16 @@ package service
 import (
 	"fmt"
 
+	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/request"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
-	"github.com/maxlcoder/homework-backend/app/request"
+	base_model "github.com/maxlcoder/homework-backend/model"
 	base_repository "github.com/maxlcoder/homework-backend/repository"
 	"gorm.io/gorm"
 )
 
 type PickingBasketServiceInterface interface {
-	Page(pageRequest request.PageRequest) ([]model.PickingBasket, int64, error)
+	Page(pageRequest request.PickingBasketPageRequest) ([]model.PickingBasket, int64, error)
 	Create(model *model.PickingBasket) (*model.PickingBasket, error)
 	Update(model *model.PickingBasket) (*model.PickingBasket, error)
 	Delete(id uint) error
@@ -30,9 +31,28 @@ func NewPickingBasketService(db *gorm.DB, pickingBasketRepository repository.Pic
 	}
 }
 
-func (u *PickingBasketService) Page(pageRequest request.PageRequest) ([]model.PickingBasket, int64, error) {
-	// TODO: 实现分页查询逻辑
-	return nil, 0, nil
+func (u *PickingBasketService) Page(pageRequest request.PickingBasketPageRequest) ([]model.PickingBasket, int64, error) {
+	cond := base_repository.ConditionScope{}
+
+	if pageRequest.Code != "" {
+		cond.StructCond = model.PickingBasketFilter{
+			Code: &pageRequest.Code,
+		}
+	}
+	
+	// 创建分页参数
+	pagination := base_model.Pagination{
+		Page:    pageRequest.Page,
+		PerPage: pageRequest.PerPage,
+	}
+
+	// 查询数据
+	count, pickingCars, err := u.PickingBasketRepository.Page(cond, pagination)
+	if err != nil {
+		return nil, 0, fmt.Errorf("获取拣货车列表失败: %w", err)
+	}
+
+	return pickingCars, count, nil
 }
 
 func (u *PickingBasketService) Create(pickingBasket *model.PickingBasket) (*model.PickingBasket, error) {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/controller"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/request"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/response"
@@ -30,7 +29,7 @@ func NewPickingBasketController(pickingBasketService service.PickingBasketServic
 }
 
 func (controller *PickingBasketController) Page(c *gin.Context) {
-	var pageRequest base_request.PageRequest
+	var pageRequest request.PickingBasketPageRequest
 	if err := base_request.BindAndSetDefaults(c, &pageRequest); err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -43,7 +42,7 @@ func (controller *PickingBasketController) Page(c *gin.Context) {
 		return
 	}
 	// 分页响应
-	pageResponse := base_response.BuildPageResponse[model.PickingBasket, *response.PickingBasketResponse](pickingBaskets, count, pageRequest.Page, pageRequest.PerPage)
+	pageResponse := base_response.BuildPageResponse[model.PickingBasket, response.PickingBasketResponse](pickingBaskets, count, pageRequest.Page, pageRequest.PerPage)
 
 	controller.Success(c, pageResponse)
 
