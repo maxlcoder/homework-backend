@@ -13,6 +13,11 @@ type BaseModel struct {
 	UpdatedAt time.Time `gorm:"not null;autoUpdateTime;comment:更新时间"`
 }
 
+type BaseSoftDeletedModel struct {
+	BaseModel
+	DeletedAt gorm.DeletedAt `gorm:"default:null;comment:删除时间"`
+}
+
 type IDModel struct {
 	ID uint
 }

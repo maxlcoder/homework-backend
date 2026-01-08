@@ -10,7 +10,7 @@ import (
 // 仓库系统
 
 type Warehouse struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	Name         string `gorm:"size:100;not null;default:'';comment:名称"`
 	Address      string `gorm:"size:200;not null;default:'';comment:详细地址"`
 	ProvinceCode string `gorm:"size:30;not null;default:'';comment:省编号"`
@@ -21,7 +21,7 @@ type Warehouse struct {
 
 // Bin  库位
 type Bin struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	Code           string `gorm:"unique;size:60;not null;default:'';comment:库位编号"`
 	SkuId          uint   `gorm:"not null;default:0;comment:当前存放 SKU ID"`
 	Num            int16  `gorm:"not null;default:0;comment:SKU 商品数量"`
@@ -62,7 +62,7 @@ func (s StaffState) IsValid() bool {
 
 // 仓库人员
 type Staff struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	Code  string     `gorm:"size:60;not null;default:'';comment:编号"`
 	Name  string     `gorm:"size:60;not null;default:'';comment:姓名"`
 	State StaffState `gorm:"not null;default:1;comment:状态"` // 默认启用状态
@@ -72,14 +72,14 @@ type Staff struct {
 
 // 入库单子
 type StockOrder struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	Code   string `gorm:"size:60;not null;default:'';comment:编号"`
 	InDate string `gorm:"size:30;not null;default:'';入库日期"`
 }
 
 // 拆包入库
 type StockOrderProduct struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	StockOrderId uint  `gorm:"not null;default:0;comment:入库单 ID"`
 	ProductId    uint  `gorm:"not null;default:0;comment:商品 ID"`
 	Num          int16 `gorm:"not null;default:0;comment:数量"`
@@ -88,13 +88,13 @@ type StockOrderProduct struct {
 
 // StockTask 入库任务
 type StockTask struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	Code         string `gorm:"size:60;not null;default:'';comment:编号"`
 	StockOrderId uint   `gorm:"not null;default:0;comment:入库单 ID"`
 }
 
 type StockTaskProduct struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	StockTaskId uint  `gorm:"not null;default:0;comment:入库任务 ID"`
 	ProductId   uint  `gorm:"not null;default:0;comment:商品 ID"`
 	Num         int16 `gorm:"not null;default:0;comment:数量"`
@@ -105,7 +105,7 @@ type StockTaskProduct struct {
 
 // 拣货车
 type PickingCar struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	Code           string `gorm:"unique;size:60;not null;default:'';comment:编号"`
 	MaxBasketCount int8   `gorm:"not null;default:0;comment:最大拣货框数"`
 }
@@ -119,7 +119,7 @@ type PickingCarFilter struct {
 
 // 拣货框 （一车多框，也就是一次拣多个订单）
 type PickingBasket struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	Code string `gorm:"size:60;not null;default:'';comment:编号"`
 }
 
@@ -132,21 +132,21 @@ type PickingBasketFilter struct {
 
 // 拣货车和拣货框关联表
 type PickingCarBasket struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	PickingCarId    uint `gorm:"not null;default:0;comment:拣货车 ID"`
 	PickingBasketId uint `gorm:"not null;default:0;comment:拣货篮 ID"`
 }
 
 // 拣货任务
 type PickingTask struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	PickingCarId uint `gorm:"not null;default:0;comment:拣货车 ID"`
 	StaffId      uint `gorm:"not null;default:0;comment:拣货员工 ID"`
 }
 
 // 拣货任务关联拣货框
 type PickingTaskBasket struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	PickingTaskId uint `gorm:"not null;default:0;comment:拣货任务 ID"`
 	PickingCarId  uint `gorm:"not null;default:0;comment:拣货车 ID"`
 	OrderId       uint `gorm:"not null;default:0;comment:订单 ID"`
@@ -154,7 +154,7 @@ type PickingTaskBasket struct {
 
 // 拣货框订单商品
 type PickingTaskBasketProduct struct {
-	base_model.BaseModel
+	base_model.BaseSoftDeletedModel
 	PickingTaskBasketId uint   `gorm:"not null;default:0;comment:拣货框 ID"`
 	PickingTaskId       uint   `gorm:"not null;default:0;comment:拣货任务 ID"`
 	PickingCarId        uint   `gorm:"not null;default:0;comment:拣货车 ID"`
@@ -167,6 +167,8 @@ type PickingTaskBasketProduct struct {
 func Models() []interface{} {
 	return []interface{}{
 		// 初始化 wms 数据库
+		&Warehouse{},
+		&Bin{},
 		&PickingCar{},
 		&PickingBasket{},
 	}
