@@ -39,7 +39,7 @@ func (u *PickingBasketService) Page(pageRequest request.PickingBasketPageRequest
 			Code: &pageRequest.Code,
 		}
 	}
-	
+
 	// 创建分页参数
 	pagination := base_model.Pagination{
 		Page:    pageRequest.Page,
@@ -75,16 +75,22 @@ func (u *PickingBasketService) Create(pickingBasket *model.PickingBasket) (*mode
 }
 
 func (u *PickingBasketService) Update(pickingBasket *model.PickingBasket) (*model.PickingBasket, error) {
-	// TODO: 实现更新逻辑
+
 	return nil, nil
 }
 
 func (u *PickingBasketService) Delete(id uint) error {
-	// TODO: 实现删除逻辑
+	err := u.PickingBasketRepository.DeleteById(id, nil)
+	if err != nil {
+		return fmt.Errorf("拣货篮删除失败: %w", err)
+	}
 	return nil
 }
 
 func (u *PickingBasketService) FindById(id uint) (*model.PickingBasket, error) {
-	// TODO: 实现根据ID查询逻辑
-	return nil, nil
+	pickingBasket, err := u.PickingBasketRepository.FindById(id)
+	if err != nil {
+		return nil, fmt.Errorf("获取拣货篮失败: %w", err)
+	}
+	return pickingBasket, nil
 }

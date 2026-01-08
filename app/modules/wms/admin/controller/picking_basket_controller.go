@@ -64,7 +64,7 @@ func (controller *PickingBasketController) Show(c *gin.Context) {
 		return
 	}
 
-	controller.Success(c, pickingBasket)
+	controller.Success(c, response.ToPickingBasketResponse(*pickingBasket))
 
 }
 

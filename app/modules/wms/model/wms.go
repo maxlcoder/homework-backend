@@ -25,7 +25,7 @@ type Bin struct {
 	Code           string `gorm:"unique;size:60;not null;default:'';comment:库位编号"`
 	SkuId          uint   `gorm:"not null;default:0;comment:当前存放 SKU ID"`
 	Num            int16  `gorm:"not null;default:0;comment:SKU 商品数量"`
-	ExpirationDate string `gorm:"comment:过期时间"`
+	ExpirationDate string `gorm:"default:NULL;comment:过期时间"`
 }
 
 // StaffState 仓库人员状态枚举

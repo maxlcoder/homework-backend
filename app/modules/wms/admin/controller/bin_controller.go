@@ -11,6 +11,7 @@ import (
 	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/request"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
 	base_request "github.com/maxlcoder/homework-backend/app/request"
+	base_response "github.com/maxlcoder/homework-backend/app/response"
 
 	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/response"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/service"
@@ -39,12 +40,23 @@ func NewBinController(binService service.BinServiceInterface) *BinController {
 }
 
 func (controller *BinController) Page(c *gin.Context) {
-	//page := c.DefaultQuery("page", "1")
-	//perPage := c.DefaultQuery("per_page", "10")
-	//
-	//controller.pickingCarService
 
-	controller.Success(c, nil)
+	var pageRequest request.BinPageRequest
+	if err := base_request.BindAndSetDefaults(c, &pageRequest); err != nil {
+		controller.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 分页查询
+	bins, count, err := controller.binService.Page(pageRequest)
+	if err != nil {
+		controller.Error(c, http.StatusBadRequest, fmt.Errorf("获取拣货框列表失败：%w", err).Error())
+		return
+	}
+	// 分页响应
+	pageResponse := base_response.BuildPageResponse[model.Bin, response.BinResponse](bins, count, pageRequest.Page, pageRequest.PerPage)
+
+	controller.Success(c, pageResponse)
 
 }
 
@@ -103,7 +115,7 @@ func (controller *BinController) Update(c *gin.Context) {
 	}
 
 	// 查询库位
-	bin, err := controller.binService.GetByID(id)
+	bin, err := controller.binService.FindById(id)
 	if err != nil {
 		controller.Error(c, http.StatusNotFound, "库位不存在")
 		return

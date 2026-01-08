@@ -10,9 +10,15 @@ import (
 // BinResponse 库位响应结构（公共）
 type BinResponse struct {
 	response.BaseResponse
-	Code   string `json:"code"`
-	Name   string `json:"name"`
-	Status int    `json:"status"`
+	Code string      `json:"code"`
+	Sku  SkuResponse `json:"sku,omitempty"`
+	Num  int         `json:"num"`
+}
+
+type SkuResponse struct {
+	response.BaseResponse
+	Name string `json:"name"`
+	Code string `json:"code"`
 }
 
 // PickingCarResponse 拣货车响应结构（公共）
