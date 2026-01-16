@@ -11,17 +11,20 @@ import (
 	admin_middleware "github.com/maxlcoder/homework-backend/app/modules/core/admin/middleware"
 	api_controller "github.com/maxlcoder/homework-backend/app/modules/core/api/controller"
 	api_middleware "github.com/maxlcoder/homework-backend/app/modules/core/api/middleware"
+	"github.com/maxlcoder/homework-backend/app/modules/core/model"
+	core_model "github.com/maxlcoder/homework-backend/app/modules/core/model"
+	repository2 "github.com/maxlcoder/homework-backend/app/modules/core/repository"
 	"github.com/maxlcoder/homework-backend/app/modules/core/service"
-	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
 	"gorm.io/gorm"
 )
 
 type AdminController struct {
-	UserController  *admin_controller.AdminUserController
-	AdminController *admin_controller.AdminController
-	RoleController  *admin_controller.RoleController
-	Handler         *jwt.GinJWTMiddleware
+	UserController   *admin_controller.AdminUserController
+	AdminController  *admin_controller.AdminController
+	RoleController   *admin_controller.RoleController
+	TenantController *admin_controller.TenantController
+	Handler          *jwt.GinJWTMiddleware
 }
 
 type ApiController struct {
@@ -44,21 +47,21 @@ func (m *CoreModule) Name() string {
 }
 
 // GetMenus 返回核心模块的菜单定义，实现MenuProvider接口
-func (m *CoreModule) GetMenus() []model.Menu {
-	return []model.Menu{
+func (m *CoreModule) GetMenus() []core_model.Menu {
+	return []core_model.Menu{
 		{
 			Number: "system-setting",
 			Name:   "系统设置",
 			Sort:   1,
-			Children: []*model.Menu{
+			Children: []*core_model.Menu{
 				{
 					Number: "admin-management",
 					Name:   "账号管理",
-					Children: []*model.Menu{
+					Children: []*core_model.Menu{
 						{
 							Number: "admin-list",
 							Name:   "列表",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "列表",
 									PATH:   "/admin/admins",
@@ -69,7 +72,7 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "admin-add",
 							Name:   "新增",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "新增",
 									PATH:   "/admin/admins",
@@ -80,7 +83,7 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "admin-update",
 							Name:   "更新",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "更新",
 									PATH:   "/admin/admins/:id",
@@ -91,7 +94,7 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "admin-detail",
 							Name:   "详情",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "详情",
 									PATH:   "/admin/admins/:id",
@@ -102,7 +105,7 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "admin-delete",
 							Name:   "删除",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "删除",
 									PATH:   "/admin/admins/:id",
@@ -115,11 +118,11 @@ func (m *CoreModule) GetMenus() []model.Menu {
 				{
 					Number: "role-management",
 					Name:   "角色管理",
-					Children: []*model.Menu{
+					Children: []*core_model.Menu{
 						{
 							Number: "role-list",
 							Name:   "列表",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "列表",
 									PATH:   "/admin/roles",
@@ -130,7 +133,7 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "role-add",
 							Name:   "新增",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "新增",
 									PATH:   "/admin/roles",
@@ -141,7 +144,7 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "role-update",
 							Name:   "更新",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "更新",
 									PATH:   "/admin/roles/:id",
@@ -152,7 +155,7 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "role-detail",
 							Name:   "详情",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "详情",
 									PATH:   "/admin/roles/:id",
@@ -163,10 +166,71 @@ func (m *CoreModule) GetMenus() []model.Menu {
 						{
 							Number: "role-delete",
 							Name:   "删除",
-							Permissions: []*model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "删除",
 									PATH:   "/admin/roles/:id",
+									Method: "DELETE",
+								},
+							},
+						},
+					},
+				},
+				{
+					Number: "tenant-management",
+					Name:   "租户管理",
+					Children: []*core_model.Menu{
+						{
+							Number: "tenant-list",
+							Name:   "列表",
+							Permissions: []*core_model.Permission{
+								{
+									Name:   "列表",
+									PATH:   "/admin/tenants",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "tenant-add",
+							Name:   "新增",
+							Permissions: []*core_model.Permission{
+								{
+									Name:   "新增",
+									PATH:   "/admin/tenants",
+									Method: "POST",
+								},
+							},
+						},
+						{
+							Number: "tenant-update",
+							Name:   "更新",
+							Permissions: []*core_model.Permission{
+								{
+									Name:   "更新",
+									PATH:   "/admin/tenants/:id",
+									Method: "PUT",
+								},
+							},
+						},
+						{
+							Number: "tenant-detail",
+							Name:   "详情",
+							Permissions: []*core_model.Permission{
+								{
+									Name:   "详情",
+									PATH:   "/admin/tenants/:id",
+									Method: "GET",
+								},
+							},
+						},
+						{
+							Number: "tenant-delete",
+							Name:   "删除",
+							Permissions: []*core_model.Permission{
+								{
+									Name:   "删除",
+									PATH:   "/admin/tenants/:id",
 									Method: "DELETE",
 								},
 							},
@@ -181,27 +245,34 @@ func (m *CoreModule) GetMenus() []model.Menu {
 // Init 初始化模块，实现ModuleInitializer接口
 func (m *CoreModule) Init() contract.Module {
 	if !m.initialized {
+
+		// 初始化表
+		model.AutoMigrate(m.DB)
+
 		userRepository := repository.NewUserRepository(m.DB)
 		// 初始化仓库
-		adminRepository := repository.NewAdminRepository(m.DB)
-		roleRepository := repository.NewRoleRepository(m.DB)
-		adminRoleRepository := repository.NewAdminRoleRepository(m.DB)
-		menuRepository := repository.NewMenuRepository(m.DB)
-		roleMenuRepository := repository.NewRoleMenuRepository(m.DB)
+		adminRepository := repository2.NewAdminRepository(m.DB)
+		roleRepository := repository2.NewRoleRepository(m.DB)
+		adminRoleRepository := repository2.NewAdminRoleRepository(m.DB)
+		menuRepository := repository2.NewMenuRepository(m.DB)
+		roleMenuRepository := repository2.NewRoleMenuRepository(m.DB)
+		tenantRepository := repository2.NewTenantRepository(m.DB)
 
 		userService := service.NewUserService(userRepository) // 初始化控制器
 		// 初始化服务
-		adminService := service.NewAdminService(m.DB, adminRepository, roleRepository, adminRoleRepository)
+		adminService := service.NewAdminService(m.DB, adminRepository, roleRepository, adminRoleRepository, menuRepository)
 		roleService := service.NewRoleService(m.DB, m.Enforcer, roleRepository, menuRepository, roleMenuRepository)
+		tenantService := service.NewTenantService(m.DB, tenantRepository)
 
 		m.ApiController = &ApiController{
 			UserController: api_controller.NewUserController(userService),
 		}
 		m.AdminController = &AdminController{
-			UserController:  admin_controller.NewAdminUserController(adminService, userService),
-			AdminController: admin_controller.NewAdminController(adminService),
-			RoleController:  admin_controller.NewRoleController(roleService),
-			Handler:         m.AdminHandler,
+			UserController:   admin_controller.NewAdminUserController(adminService, userService),
+			AdminController:  admin_controller.NewAdminController(adminService),
+			RoleController:   admin_controller.NewRoleController(roleService),
+			TenantController: admin_controller.NewTenantController(tenantService),
+			Handler:          m.AdminHandler,
 		}
 		m.initialized = true
 	}
@@ -265,4 +336,11 @@ func (ctrl *AdminController) RegisterRoutes(group *gin.RouterGroup, authGroup *g
 	authGroup.POST("roles", ctrl.RoleController.Store)         // 新增
 	authGroup.PUT("roles/:id", ctrl.RoleController.Update)     // 更新
 	authGroup.DELETE("roles/:id", ctrl.RoleController.Destroy) // 删除
+
+	// ------------ 租户管理 ------------
+	authGroup.GET("tenants", ctrl.TenantController.Page)           // 分页列表
+	authGroup.GET("tenants/:id", ctrl.TenantController.Show)       // 详情
+	authGroup.POST("tenants", ctrl.TenantController.Store)         // 新增
+	authGroup.PUT("tenants/:id", ctrl.TenantController.Update)     // 更新
+	authGroup.DELETE("tenants/:id", ctrl.TenantController.Destroy) // 删除
 }

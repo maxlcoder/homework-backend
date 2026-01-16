@@ -5,16 +5,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/contract"
+	core_model "github.com/maxlcoder/homework-backend/app/modules/core/model"
 	wms_admin_controller "github.com/maxlcoder/homework-backend/app/modules/wms/admin/controller"
+	admin_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/admin/middleware"
 	wms_api_controller "github.com/maxlcoder/homework-backend/app/modules/wms/api/controller"
+	api_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/api/middleware"
+	module_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/middleware"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/service"
-	base_model "github.com/maxlcoder/homework-backend/model"
-
-	admin_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/admin/middleware"
-	api_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/api/middleware"
-	module_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/middleware"
 
 	"gorm.io/gorm"
 )
@@ -46,21 +45,21 @@ func (m *WmsModule) Name() string {
 }
 
 // GetMenus 返回WMS模块的菜单定义，实现MenuProvider接口
-func (m *WmsModule) GetMenus() []base_model.Menu {
-	return []base_model.Menu{
+func (m *WmsModule) GetMenus() []core_model.Menu {
+	return []core_model.Menu{
 		{
 			Number: "wms-management",
 			Name:   "WMS管理",
 			Sort:   2,
-			Children: []*base_model.Menu{
+			Children: []*core_model.Menu{
 				{
 					Number: "bin-management",
 					Name:   "库位管理",
-					Children: []*base_model.Menu{
+					Children: []*core_model.Menu{
 						{
 							Number: "bin-list",
 							Name:   "列表",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "列表",
 									PATH:   "/admin/wms/bins",
@@ -71,7 +70,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "bin-add",
 							Name:   "新增",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "新增",
 									PATH:   "/admin/wms/bins",
@@ -82,7 +81,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "bin-update",
 							Name:   "更新",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "更新",
 									PATH:   "/admin/wms/bins/:id",
@@ -93,7 +92,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "bin-detail",
 							Name:   "详情",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "详情",
 									PATH:   "/admin/wms/bins/:id",
@@ -104,7 +103,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "bin-delete",
 							Name:   "删除",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "删除",
 									PATH:   "/admin/wms/bins/:id",
@@ -117,11 +116,11 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 				{
 					Number: "picking-car-management",
 					Name:   "拣货车辆管理",
-					Children: []*base_model.Menu{
+					Children: []*core_model.Menu{
 						{
 							Number: "picking-car-list",
 							Name:   "列表",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "列表",
 									PATH:   "/admin/wms/picking-cars",
@@ -132,7 +131,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-car-add",
 							Name:   "新增",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "新增",
 									PATH:   "/admin/wms/picking-cars",
@@ -143,7 +142,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-car-update",
 							Name:   "更新",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "更新",
 									PATH:   "/admin/wms/picking-cars/:id",
@@ -154,7 +153,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-car-detail",
 							Name:   "详情",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "详情",
 									PATH:   "/admin/wms/picking-cars/:id",
@@ -165,7 +164,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-car-delete",
 							Name:   "删除",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "删除",
 									PATH:   "/admin/wms/picking-cars/:id",
@@ -178,11 +177,11 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 				{
 					Number: "staff-management",
 					Name:   "员工管理",
-					Children: []*base_model.Menu{
+					Children: []*core_model.Menu{
 						{
 							Number: "staff-list",
 							Name:   "列表",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "列表",
 									PATH:   "/admin/wms/staff",
@@ -193,7 +192,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "staff-add",
 							Name:   "新增",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "新增",
 									PATH:   "/admin/wms/staff",
@@ -204,7 +203,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "staff-update",
 							Name:   "更新",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "更新",
 									PATH:   "/admin/wms/staff/:id",
@@ -215,7 +214,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "staff-detail",
 							Name:   "详情",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "详情",
 									PATH:   "/admin/wms/staff/:id",
@@ -226,7 +225,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "staff-delete",
 							Name:   "删除",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "删除",
 									PATH:   "/admin/wms/staff/:id",
@@ -239,11 +238,11 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 				{
 					Number: "picking-basket-management",
 					Name:   "拣货篮管理",
-					Children: []*base_model.Menu{
+					Children: []*core_model.Menu{
 						{
 							Number: "picking-basket-list",
 							Name:   "列表",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "列表",
 									PATH:   "/admin/wms/picking-baskets",
@@ -254,7 +253,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-basket-add",
 							Name:   "新增",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "新增",
 									PATH:   "/admin/wms/picking-baskets",
@@ -265,7 +264,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-basket-update",
 							Name:   "更新",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "更新",
 									PATH:   "/admin/wms/picking-baskets/:id",
@@ -276,7 +275,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-basket-detail",
 							Name:   "详情",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "详情",
 									PATH:   "/admin/wms/picking-baskets/:id",
@@ -287,7 +286,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 						{
 							Number: "picking-basket-delete",
 							Name:   "删除",
-							Permissions: []*base_model.Permission{
+							Permissions: []*core_model.Permission{
 								{
 									Name:   "删除",
 									PATH:   "/admin/wms/picking-baskets/:id",
@@ -305,7 +304,7 @@ func (m *WmsModule) GetMenus() []base_model.Menu {
 // Init 初始化模块，实现ModuleInitializer接口
 func (m *WmsModule) Init() contract.Module {
 	if !m.initialized {
-		// 初始化表格
+		// 初始化表
 		model.AutoMigrate(m.DB)
 
 		// 初始化仓库

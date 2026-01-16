@@ -19,6 +19,12 @@ type IdRequest struct {
 }
 
 func BindAndSetDefaults(c *gin.Context, req interface{}) error {
+	// 绑定校验之前给默认值
+	// 应用默认值（用 creasty/defaults 或你自己写的 applyDefaults）
+	if err := defaults.Set(req); err != nil {
+		return err
+	}
+
 	// 判断一下请求方式
 	ct := c.ContentType()
 	if ct == "application/json" {
@@ -40,11 +46,6 @@ func BindAndSetDefaults(c *gin.Context, req interface{}) error {
 			errorTrans := validator.TranslateError(err)
 			return fmt.Errorf("%s", strings.Join(errorTrans, ","))
 		}
-	}
-
-	// 应用默认值（用 creasty/defaults 或你自己写的 applyDefaults）
-	if err := defaults.Set(req); err != nil {
-		return err
 	}
 	return nil
 }

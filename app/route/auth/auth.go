@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +10,7 @@ import (
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
+	core_model "github.com/maxlcoder/homework-backend/app/modules/core/model"
 	"github.com/maxlcoder/homework-backend/database"
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/pkg/response"
@@ -72,11 +73,11 @@ func InitAdminJwtParams() *jwt.GinJWTMiddleware {
 		Timeout:     timeout,
 		MaxRefresh:  time.Hour,
 		IdentityKey: identityKey,
-		PayloadFunc: payloadFunc[model.Admin, *model.Admin](),
+		PayloadFunc: payloadFunc[core_model.Admin, *core_model.Admin](),
 
 		IdentityHandler: identityHandler(),
-		Authenticator:   authenticator[model.Admin, *model.Admin](),
-		Authorizator:    authorizator[model.Admin](),
+		Authenticator:   authenticator[core_model.Admin, *core_model.Admin](),
+		Authorizator:    authorizator[core_model.Admin](),
 		Unauthorized:    unauthorized(),
 		TokenLookup:     "header: Authorization", // 请求 token 设置，支持多种 header: Authorization, query: token, cookie: jwt
 		TimeFunc:        time.Now,
@@ -127,7 +128,7 @@ func authenticator[T any, PT interface {
 	}
 }
 
-func authorizator[T model.User | model.Admin]() func(data interface{}, c *gin.Context) bool {
+func authorizator[T model.User | core_model.Admin]() func(data interface{}, c *gin.Context) bool {
 	// 用户类型传入
 	return func(data interface{}, c *gin.Context) bool {
 		tType := reflect.TypeOf(new(T)).Elem().Name()
@@ -179,19 +180,28 @@ func identityHandler() func(c *gin.Context) interface{} {
 			return &user
 		case "Admin":
 			// 设置全局 admin_id
-			c.Set("admin_id", userId)
-			// 获取管理员角色
-			var adminRole model.AdminRole
-			err := database.DB.Model(&model.AdminRole{}).Where("admin_id = ?", userId).First(&adminRole).Error
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				c.Set("admin_role_id", adminRole.RoleId)
-				var role model.Role
-				err := database.DB.Model(&role).Where("id = ?", adminRole.RoleId).First(&role).Error
-				if !errors.Is(err, gorm.ErrRecordNotFound) {
-					c.Set("admin_role_name", role.Name)
-				}
+			c.Set("login_admin_id", userId)
+			// 管理员角色一对多，当前角色存储在 admin 表中，先设置是否为超管简化后续判断
+			ctx := context.Background()
+			admin, error := gorm.G[core_model.Admin](database.DB).Where("id = ?", userId).First(ctx)
+			if error != nil {
+				response.Error(c, http.StatusUnauthorized, "当前用户信息异常")
+				return nil
 			}
-			var admin model.Admin
+			c.Set("login_admin_role_id", admin.RoleId)
+			// 获取管理员角色
+			if admin.RoleId > 0 {
+				role, error := gorm.G[core_model.Role](database.DB).Where("id = ?", admin.RoleId).First(ctx)
+				if error != nil {
+					response.Error(c, http.StatusUnauthorized, "当前用户角色信息异常")
+					return nil
+				}
+				c.Set("login_admin_role", role)
+			}
+			role, exists := c.Get("login_admin_role")
+			if exists {
+				fmt.Println("login_admin_role:", role)
+			}
 			admin.ID = userId
 			return &admin
 		}

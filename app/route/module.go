@@ -3,8 +3,6 @@ package route
 import (
 	"sync"
 
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/contract"
 )
@@ -128,8 +126,6 @@ func AutoRegisterModule(name string, apiGroup *gin.RouterGroup, apiAuthGroup *gi
 	registryMutex.Lock()
 	delete(moduleRegistry, name)
 	registryMutex.Unlock()
-	fmt.Printf("Removed module from registry: %s\n", name)
-
 	return true
 }
 

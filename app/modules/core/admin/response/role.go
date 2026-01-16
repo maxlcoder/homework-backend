@@ -2,8 +2,8 @@ package response
 
 import (
 	"github.com/jinzhu/copier"
+	"github.com/maxlcoder/homework-backend/app/modules/core/model"
 	"github.com/maxlcoder/homework-backend/app/response"
-	"github.com/maxlcoder/homework-backend/model"
 )
 
 type RoleResponse struct {

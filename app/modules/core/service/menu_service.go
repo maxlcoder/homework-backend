@@ -3,18 +3,29 @@ package service
 import (
 	"fmt"
 
-	"github.com/maxlcoder/homework-backend/model"
-	"github.com/maxlcoder/homework-backend/repository"
+	"github.com/maxlcoder/homework-backend/app/modules/core/model"
+	"github.com/maxlcoder/homework-backend/app/modules/core/repository"
+	base_model "github.com/maxlcoder/homework-backend/model"
+	base_repository "github.com/maxlcoder/homework-backend/repository"
+	"gorm.io/gorm"
 )
 
 type MenuServiceInterface interface {
 	Create(menu *model.Menu) (*model.Menu, error)
 	GetById(id uint) (*model.Menu, error)
-	GetPageByFilter(modelFilter model.MenuFilter, pagination model.Pagination) (int64, []model.Menu, error)
+	GetPageByFilter(modelFilter model.MenuFilter, pagination base_model.Pagination) (int64, []model.Menu, error)
 }
 
 type MenuService struct {
+	db             *gorm.DB
 	MenuRepository repository.MenuRepository
+}
+
+func NewMenuService(db *gorm.DB, menuRepository repository.MenuRepository) MenuServiceInterface {
+	return &MenuService{
+		db:             db,
+		MenuRepository: menuRepository,
+	}
 }
 
 func (u *MenuService) Create(menu *model.Menu) (*model.Menu, error) {
@@ -22,7 +33,7 @@ func (u *MenuService) Create(menu *model.Menu) (*model.Menu, error) {
 	filter := model.MenuFilter{
 		Name: &menu.Name,
 	}
-	cond := repository.ConditionScope{
+	cond := base_repository.ConditionScope{
 		StructCond: filter,
 	}
 	findUser, _ := u.MenuRepository.FindBy(cond)
@@ -55,7 +66,7 @@ func (u *MenuService) GetById(id uint) (*model.Menu, error) {
 	filter := model.MenuFilter{
 		ID: &id,
 	}
-	cond := repository.ConditionScope{
+	cond := base_repository.ConditionScope{
 		StructCond: filter,
 	}
 	user, err := u.MenuRepository.FindBy(cond)
@@ -70,9 +81,9 @@ func (u *MenuService) GetByObject() {
 	panic("implement me")
 }
 
-func (u *MenuService) GetPageByFilter(modelFilter model.MenuFilter, pagination model.Pagination) (int64, []model.Menu, error) {
+func (u *MenuService) GetPageByFilter(modelFilter model.MenuFilter, pagination base_model.Pagination) (int64, []model.Menu, error) {
 
-	cond := repository.ConditionScope{
+	cond := base_repository.ConditionScope{
 		StructCond: modelFilter,
 	}
 

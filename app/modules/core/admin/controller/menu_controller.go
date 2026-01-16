@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/response"
+	model2 "github.com/maxlcoder/homework-backend/app/modules/core/model"
 	"github.com/maxlcoder/homework-backend/app/modules/core/service"
 	base_response "github.com/maxlcoder/homework-backend/app/response"
 	"github.com/maxlcoder/homework-backend/model"
@@ -26,7 +27,7 @@ func NewMenuController(menuService service.MenuServiceInterface) *MenuController
 
 func (controller *MenuController) Page(c *gin.Context) {
 	var pagination model.Pagination
-	var filter model.MenuFilter
+	var filter model2.MenuFilter
 	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
@@ -55,7 +56,7 @@ func (controller *MenuController) Page(c *gin.Context) {
 
 func (controller *MenuController) Store(c *gin.Context) {
 	var pagination model.Pagination
-	var filter model.MenuFilter
+	var filter model2.MenuFilter
 	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
@@ -81,7 +82,7 @@ func (controller *MenuController) Store(c *gin.Context) {
 }
 func (controller *MenuController) Update(c *gin.Context) {
 	var pagination model.Pagination
-	var filter model.MenuFilter
+	var filter model2.MenuFilter
 	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
@@ -108,7 +109,7 @@ func (controller *MenuController) Update(c *gin.Context) {
 
 func (controller *MenuController) Destroy(c *gin.Context) {
 	var pagination model.Pagination
-	var filter model.MenuFilter
+	var filter model2.MenuFilter
 	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return
@@ -135,7 +136,7 @@ func (controller *MenuController) Destroy(c *gin.Context) {
 
 func (controller *MenuController) Show(c *gin.Context) {
 	var pagination model.Pagination
-	var filter model.MenuFilter
+	var filter model2.MenuFilter
 	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return

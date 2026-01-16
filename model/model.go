@@ -51,36 +51,3 @@ type Authenticatable interface {
 	GetId() uint
 	GetPassword() string
 }
-
-func Models() []interface{} {
-	return []interface{}{
-		&User{},
-		&Admin{},
-		&Menu{},
-		&MenuPermission{},
-		&Permission{},
-		&Role{},
-		&AdminRole{},
-		&RoleMenu{},
-		&RolePermission{},
-
-		// 初始化 homework 数据库 TODO 根据配置初始化系统模块数据库
-		&School{},
-		&Class{},
-		&Course{},
-		&Teacher{},
-		&SchoolTeacher{},
-		&Student{},
-		&Parent{},
-		&StudentParent{},
-		&Question{},
-		&Assignment{},
-		&AssignmentItem{},
-		&StudentAssignment{},
-		&StudentAnswer{},
-	}
-}
-
-func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(Models()...)
-}

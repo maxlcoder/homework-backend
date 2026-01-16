@@ -3,7 +3,7 @@ package contract
 import (
 	"sync"
 
-	"github.com/maxlcoder/homework-backend/model"
+	"github.com/maxlcoder/homework-backend/app/modules/core/model"
 )
 
 // MenuProvider 菜单提供者接口（与 route_interface.go 保持一致）

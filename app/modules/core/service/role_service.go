@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/casbin/casbin/v2"
+	model2 "github.com/maxlcoder/homework-backend/app/modules/core/model"
+	repository2 "github.com/maxlcoder/homework-backend/app/modules/core/repository"
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
 	"github.com/samber/lo"
@@ -11,23 +13,23 @@ import (
 )
 
 type RoleServiceInterface interface {
-	Create(role *model.Role) (*model.Role, error)
-	CreateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error)
-	UpdateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error)
-	GetById(id uint) (*model.Role, error)
-	GetPageByFilter(modelFilter model.RoleFilter, pagination model.Pagination) (int64, []model.Role, error)
-	Delete(role *model.Role) error
+	Create(role *model2.Role) (*model2.Role, error)
+	CreateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error)
+	UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error)
+	GetById(id uint) (*model2.Role, error)
+	GetPageByFilter(modelFilter model2.RoleFilter, pagination model.Pagination) (int64, []model2.Role, error)
+	Delete(role *model2.Role) error
 }
 
 type RoleService struct {
 	db                 *gorm.DB
 	enforcer           *casbin.Enforcer
-	RoleRepository     repository.RoleRepository
-	MenuRepository     repository.MenuRepository
-	RoleMenuRepository repository.RoleMenuRepository
+	RoleRepository     repository2.RoleRepository
+	MenuRepository     repository2.MenuRepository
+	RoleMenuRepository repository2.RoleMenuRepository
 }
 
-func NewRoleService(db *gorm.DB, enforcer *casbin.Enforcer, roleRepository repository.RoleRepository, menuRepository repository.MenuRepository, roleMenuRepository repository.RoleMenuRepository) RoleServiceInterface {
+func NewRoleService(db *gorm.DB, enforcer *casbin.Enforcer, roleRepository repository2.RoleRepository, menuRepository repository2.MenuRepository, roleMenuRepository repository2.RoleMenuRepository) RoleServiceInterface {
 	return &RoleService{
 		db:                 db,
 		enforcer:           enforcer,
@@ -37,9 +39,9 @@ func NewRoleService(db *gorm.DB, enforcer *casbin.Enforcer, roleRepository repos
 	}
 }
 
-func (u *RoleService) Create(role *model.Role) (*model.Role, error) {
+func (u *RoleService) Create(role *model2.Role) (*model2.Role, error) {
 	// 判断是否存在已经适用的名称
-	filter := model.RoleFilter{
+	filter := model2.RoleFilter{
 		Name: &role.Name,
 	}
 
@@ -58,10 +60,10 @@ func (u *RoleService) Create(role *model.Role) (*model.Role, error) {
 	return role, nil
 }
 
-func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error) {
+func (u *RoleService) CreateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error) {
 
 	// 判断是否存在已经适用的名称
-	filter := model.RoleFilter{
+	filter := model2.RoleFilter{
 		Name: &role.Name,
 	}
 
@@ -78,7 +80,7 @@ func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*mo
 	menuCond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
-				return db.Where("id IN ?", lo.Map(menus, func(item model.Menu, index int) uint {
+				return db.Where("id IN ?", lo.Map(menus, func(item model2.Menu, index int) uint {
 					return item.ID
 				}))
 			},
@@ -99,9 +101,9 @@ func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*mo
 			return fmt.Errorf("角色创建失败: %w", err)
 		}
 		// 菜单处理
-		var roleMenus []model.RoleMenu
-		roleMenus = lo.Map(menus, func(item model.Menu, index int) model.RoleMenu {
-			return model.RoleMenu{
+		var roleMenus []model2.RoleMenu
+		roleMenus = lo.Map(menus, func(item model2.Menu, index int) model2.RoleMenu {
+			return model2.RoleMenu{
 				RoleID: role.ID,
 				MenuID: item.ID,
 			}
@@ -115,12 +117,12 @@ func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*mo
 
 		// 角色授权
 		// 菜单关联的权限
-		permissions, _ := u.MenuRepository.GetPermissionsByMenuIds(lo.Map(menus, func(item model.Menu, index int) uint {
+		permissions, _ := u.MenuRepository.GetPermissionsByMenuIds(lo.Map(menus, func(item model2.Menu, index int) uint {
 			return item.ID
 		}))
 		// 1. role_permission 表增加记录
-		rolePermissions := lo.Map(permissions, func(item model.Permission, index int) model.RolePermission {
-			return model.RolePermission{
+		rolePermissions := lo.Map(permissions, func(item model2.Permission, index int) model2.RolePermission {
+			return model2.RolePermission{
 				RoleID:       role.ID,
 				PermissionID: item.ID,
 			}
@@ -130,7 +132,7 @@ func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*mo
 			return fmt.Errorf("角色权限关联创建失败: %w", err)
 		}
 		// 2. casbin 授权
-		casbinPermission := lo.Map(permissions, func(item model.Permission, index int) []string {
+		casbinPermission := lo.Map(permissions, func(item model2.Permission, index int) []string {
 			return []string{"1", item.PATH, item.Method}
 		})
 		if len(casbinPermission) > 0 {
@@ -148,9 +150,9 @@ func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*mo
 	return role, nil
 }
 
-func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error) {
+func (u *RoleService) UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error) {
 	// 判断角色是否存在
-	filter := model.RoleFilter{
+	filter := model2.RoleFilter{
 		ID: &role.ID,
 	}
 	cond := repository.ConditionScope{
@@ -165,7 +167,7 @@ func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*mo
 	menuCond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
-				return db.Where("id IN ?", lo.Map(menus, func(item model.Menu, index int) uint {
+				return db.Where("id IN ?", lo.Map(menus, func(item model2.Menu, index int) uint {
 					return item.ID
 				}))
 			},
@@ -199,9 +201,9 @@ func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*mo
 			return fmt.Errorf("角色菜单处理失败: %w", err)
 		}
 		// 补充新菜单
-		var roleMenus []model.RoleMenu
-		roleMenus = lo.Map(menus, func(item model.Menu, index int) model.RoleMenu {
-			return model.RoleMenu{
+		var roleMenus []model2.RoleMenu
+		roleMenus = lo.Map(menus, func(item model2.Menu, index int) model2.RoleMenu {
+			return model2.RoleMenu{
 				RoleID: role.ID,
 				MenuID: item.ID,
 			}
@@ -215,15 +217,15 @@ func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*mo
 
 		// 角色授权
 		// 菜单关联的权限
-		permissions, _ := u.MenuRepository.GetPermissionsByMenuIds(lo.Map(menus, func(item model.Menu, index int) uint {
+		permissions, _ := u.MenuRepository.GetPermissionsByMenuIds(lo.Map(menus, func(item model2.Menu, index int) uint {
 			return item.ID
 		}))
 		// 1. 先删除role_permission 表记录，再增加记录
 		// 删除记录
 		u.RoleRepository.DeleteRolePermissionsByRoleId(role.ID, tx)
 
-		rolePermissions := lo.Map(permissions, func(item model.Permission, index int) model.RolePermission {
-			return model.RolePermission{
+		rolePermissions := lo.Map(permissions, func(item model2.Permission, index int) model2.RolePermission {
+			return model2.RolePermission{
 				RoleID:       role.ID,
 				PermissionID: item.ID,
 			}
@@ -234,7 +236,7 @@ func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*mo
 		}
 		// 2. 先删除 casbin 授权，再添加
 		u.enforcer.RemoveFilteredPolicy(0, "role_"+role.Name, "1")
-		casbinPermission := lo.Map(permissions, func(item model.Permission, index int) []string {
+		casbinPermission := lo.Map(permissions, func(item model2.Permission, index int) []string {
 			return []string{"1", item.PATH, item.Method}
 		})
 		if len(casbinPermission) > 0 {
@@ -253,7 +255,7 @@ func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*mo
 	return role, nil
 }
 
-func (u *RoleService) Delete(role *model.Role) error {
+func (u *RoleService) Delete(role *model2.Role) error {
 
 	// 检查角色是否存在
 	role, err := u.RoleRepository.FindById(role.ID)
@@ -294,8 +296,8 @@ func (u *RoleService) List() {
 	panic("implement me")
 }
 
-func (u *RoleService) GetById(id uint) (*model.Role, error) {
-	filter := model.RoleFilter{
+func (u *RoleService) GetById(id uint) (*model2.Role, error) {
+	filter := model2.RoleFilter{
 		ID: &id,
 	}
 
@@ -314,7 +316,7 @@ func (u *RoleService) GetByObject() {
 	panic("implement me")
 }
 
-func (u *RoleService) GetPageByFilter(modelFilter model.RoleFilter, pagination model.Pagination) (int64, []model.Role, error) {
+func (u *RoleService) GetPageByFilter(modelFilter model2.RoleFilter, pagination model.Pagination) (int64, []model2.Role, error) {
 
 	cond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{func(db *gorm.DB) *gorm.DB {

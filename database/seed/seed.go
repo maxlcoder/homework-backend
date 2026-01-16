@@ -9,6 +9,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/contract"
+	core_model "github.com/maxlcoder/homework-backend/app/modules/core/model"
 	"github.com/maxlcoder/homework-backend/model"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -49,12 +50,12 @@ func InitSeed(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) error {
 // 超管
 func seedSuperAdmin(db *gorm.DB) error {
 	// 检查相关表是否存在
-	has := db.Migrator().HasTable(&model.Admin{})
+	has := db.Migrator().HasTable(&core_model.Admin{})
 	if !has {
 		return fmt.Errorf("%s table not found", "admin")
 	}
 	// 检查是否存在
-	var admin model.Admin
+	var admin core_model.Admin
 	err := db.Where("id = ?", 1).First(&admin).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		admin.ID = 1
@@ -74,12 +75,12 @@ func seedSuperAdmin(db *gorm.DB) error {
 // 角色
 func seedSuperRole(db *gorm.DB) error {
 	// 检查相关表是否存在
-	has := db.Migrator().HasTable(&model.Role{})
+	has := db.Migrator().HasTable(&core_model.Role{})
 	if !has {
 		return fmt.Errorf("%s table not found", "role")
 	}
 	// 检查是否存在
-	var role model.Role
+	var role core_model.Role
 	err := db.Where("id = ?", 1).First(&role).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		role.ID = 1
@@ -93,7 +94,7 @@ func seedSuperRole(db *gorm.DB) error {
 func seedSuperAdminRole(db *gorm.DB) error {
 	db.Clauses(clause.OnConflict{
 		UpdateAll: false,
-	}).Create(&model.AdminRole{
+	}).Create(&core_model.AdminRole{
 		AdminId: 1,
 		RoleId:  1,
 	})
@@ -103,7 +104,7 @@ func seedSuperAdminRole(db *gorm.DB) error {
 // 路由权限
 func seedPermissions(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) error {
 	// 检查相关表是否存在
-	has := db.Migrator().HasTable(&model.Permission{})
+	has := db.Migrator().HasTable(&core_model.Permission{})
 	if !has {
 		return fmt.Errorf("%s table not found", "permission")
 	}
@@ -116,7 +117,7 @@ func seedPermissions(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) erro
 		if !strings.HasPrefix(route.Path, "/admin/") {
 			continue
 		}
-		var permission model.Permission
+		var permission core_model.Permission
 		err := db.Where("path = ?", route.Path).Where("method = ?", route.Method).First(&permission).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			permission.PATH = route.Path
@@ -125,12 +126,12 @@ func seedPermissions(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) erro
 		}
 		permissionIds = append(permissionIds, permission.ID)
 
-		// 补充 casbin 中 p 规则，给角色赋权
-		enforcer.AddPermissionForUser("role_super_admin", "1", permission.PATH, permission.Method)
+		// 补充 casbin 中 p 规则，给角色赋权，超管角色 ID = 1 & tenant id = 0
+		enforcer.AddPermissionForUser("role_1", "0", permission.PATH, permission.Method)
 	}
 
 	// 找出需要删除的 permission ，删除 casbin 中对应的 p 规则
-	var deletePermissions []model.Permission
+	var deletePermissions []core_model.Permission
 	db.Where("id NOT IN ?", permissionIds).Find(&deletePermissions)
 
 	for _, permission := range deletePermissions {
@@ -140,11 +141,11 @@ func seedPermissions(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) erro
 	// 删除非现有权限相关关联，默认不存在一个权限没有的情况
 	if len(permissionIds) > 0 {
 		// 删除权限
-		db.Where("id NOT IN ?", permissionIds).Delete(&model.Permission{})
+		db.Where("id NOT IN ?", permissionIds).Delete(&core_model.Permission{})
 		// 删除菜单权限关联
-		db.Where("permission_id NOT IN ?", permissionIds).Delete(&model.MenuPermission{})
+		db.Where("permission_id NOT IN ?", permissionIds).Delete(&core_model.MenuPermission{})
 		// 删除角色权限关联
-		db.Where("permission_id NOT IN ?", permissionIds).Delete(&model.RolePermission{})
+		db.Where("permission_id NOT IN ?", permissionIds).Delete(&core_model.RolePermission{})
 	}
 
 	return nil
@@ -153,7 +154,7 @@ func seedPermissions(db *gorm.DB, r *gin.Engine, enforcer *casbin.Enforcer) erro
 // 菜单
 func seedMenus(db *gorm.DB) error {
 	// 检查相关表是否存在
-	has := db.Migrator().HasTable(&model.Menu{})
+	has := db.Migrator().HasTable(&core_model.Menu{})
 	if !has {
 		return fmt.Errorf("%s table not found", "menu")
 	}
@@ -183,16 +184,16 @@ func seedMenus(db *gorm.DB) error {
 	}
 
 	// 删除不在系统中的菜单
-	db.Where("menu_id NOT IN ?", menuIds).Delete(&model.RoleMenu{})
-	db.Where("menu_id NOT IN ?", menuIds).Delete(&model.MenuPermission{})
+	db.Where("menu_id NOT IN ?", menuIds).Delete(&core_model.RoleMenu{})
+	db.Where("menu_id NOT IN ?", menuIds).Delete(&core_model.MenuPermission{})
 
 	return nil
 }
 
-func insertUpdateMenu(db *gorm.DB, ch chan<- uint, menu *model.Menu, parentId uint, wg *sync.WaitGroup) {
+func insertUpdateMenu(db *gorm.DB, ch chan<- uint, menu *core_model.Menu, parentId uint, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// 根据编号查询是否存在，存在则更新，不存在则插入
-	var findMenu model.Menu
+	var findMenu core_model.Menu
 	err := db.Where("number = ?", menu.Number).First(&findMenu).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		findMenu.Number = menu.Number
@@ -200,25 +201,25 @@ func insertUpdateMenu(db *gorm.DB, ch chan<- uint, menu *model.Menu, parentId ui
 		findMenu.ParentID = parentId
 		db.Create(&findMenu)
 	} else {
-		db.Model(&findMenu).Updates(model.Menu{
+		db.Model(&findMenu).Updates(core_model.Menu{
 			Name:     menu.Name,
 			ParentID: parentId,
 		})
 	}
 	// 检查是否有 permissions，有则需要写入权限关系
 	for _, permision := range menu.Permissions {
-		var findPermission model.Permission
+		var findPermission core_model.Permission
 		err := db.Where("path = ?", permision.PATH).Where("method = ?", permision.Method).First(&findPermission).Error
 		if err == nil {
 			if strings.TrimSpace(permision.Name) != "" && findPermission.Name != permision.Name {
-				db.Model(&findPermission).Updates(model.Permission{
+				db.Model(&findPermission).Updates(core_model.Permission{
 					Name: permision.Name,
 				})
 			}
 			// 菜单与权限的关联，不存在则创建
 			db.Clauses(clause.OnConflict{
 				UpdateAll: false,
-			}).Create(&model.MenuPermission{
+			}).Create(&core_model.MenuPermission{
 				MenuID:       findMenu.ID,
 				PermissionID: findPermission.ID,
 			})
@@ -237,18 +238,18 @@ func insertUpdateMenu(db *gorm.DB, ch chan<- uint, menu *model.Menu, parentId ui
 // 角色菜单,权限关联
 func seedRoleMenuPermissions(db *gorm.DB, enforcer *casbin.Enforcer) error {
 	// 检查相关表是否存在
-	has := db.Migrator().HasTable(&model.RoleMenu{})
+	has := db.Migrator().HasTable(&core_model.RoleMenu{})
 	if !has {
 		return fmt.Errorf("%s table not found", "role_menu")
 	}
 	// 超管角色与全部菜单关联
-	var menus []model.Menu
+	var menus []core_model.Menu
 	result := db.Find(&menus)
 	if result.Error != nil {
 		return fmt.Errorf("find menu error: %v", result.Error)
 	}
 	for _, menu := range menus {
-		var roleMenu model.RoleMenu
+		var roleMenu core_model.RoleMenu
 		err := db.Where("id = ?", menu.ID).First(&roleMenu).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			roleMenu.RoleID = 1
@@ -258,13 +259,13 @@ func seedRoleMenuPermissions(db *gorm.DB, enforcer *casbin.Enforcer) error {
 	}
 
 	// 超管角色与全部权限关联
-	var permissions []model.Permission
+	var permissions []core_model.Permission
 	result = db.Find(&permissions)
 	if result.Error != nil {
 		return fmt.Errorf("find permission error: %v", result.Error)
 	}
 	for _, permission := range permissions {
-		var rolePermission model.RolePermission
+		var rolePermission core_model.RolePermission
 		err := db.Where("id = ?", permission.ID).First(&rolePermission).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			rolePermission.RoleID = 1
@@ -276,7 +277,7 @@ func seedRoleMenuPermissions(db *gorm.DB, enforcer *casbin.Enforcer) error {
 	return nil
 }
 
-func loadMenus() []model.Menu {
+func loadMenus() []core_model.Menu {
 	// 使用新的菜单注册机制获取所有菜单
 	// 现在菜单与路由一样，通过模块自身实现MenuProvider接口来提供
 	return contract.GetAllMenus()

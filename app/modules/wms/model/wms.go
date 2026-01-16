@@ -7,8 +7,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// 仓库系统
+const TablePrefix = "wms_"
 
+// Warehouse 仓库
 type Warehouse struct {
 	base_model.BaseSoftDeletedModel
 	Name         string `gorm:"size:100;not null;default:'';comment:名称"`
@@ -19,13 +20,22 @@ type Warehouse struct {
 	Area         string `gorm:"size:30;not null;default:'';comment:面积"`
 }
 
+func (Warehouse) TableName() string {
+	return TablePrefix + "warehouse"
+}
+
 // Bin  库位
 type Bin struct {
 	base_model.BaseSoftDeletedModel
+	WarehouseId    uint   `gorm:"index:idx_warehouse_id;not null;default:0;comment:仓库 ID"`
 	Code           string `gorm:"unique;size:60;not null;default:'';comment:库位编号"`
 	SkuId          uint   `gorm:"not null;default:0;comment:当前存放 SKU ID"`
 	Num            int16  `gorm:"not null;default:0;comment:SKU 商品数量"`
 	ExpirationDate string `gorm:"default:NULL;comment:过期时间"`
+}
+
+func (Bin) TableName() string {
+	return TablePrefix + "bin"
 }
 
 // StaffState 仓库人员状态枚举
@@ -68,6 +78,10 @@ type Staff struct {
 	State StaffState `gorm:"not null;default:1;comment:状态"` // 默认启用状态
 }
 
+func (Staff) TableName() string {
+	return TablePrefix + "staff"
+}
+
 // ---------- 入库相关 ----------
 
 // 入库单子
@@ -75,6 +89,10 @@ type StockOrder struct {
 	base_model.BaseSoftDeletedModel
 	Code   string `gorm:"size:60;not null;default:'';comment:编号"`
 	InDate string `gorm:"size:30;not null;default:'';入库日期"`
+}
+
+func (StockOrder) TableName() string {
+	return TablePrefix + "stock_order"
 }
 
 // 拆包入库
@@ -86,11 +104,19 @@ type StockOrderProduct struct {
 	BinId        uint  `gorm:"not null;default:0;comment:库位 ID"`
 }
 
+func (StockOrderProduct) TableName() string {
+	return TablePrefix + "stock_order_product"
+}
+
 // StockTask 入库任务
 type StockTask struct {
 	base_model.BaseSoftDeletedModel
 	Code         string `gorm:"size:60;not null;default:'';comment:编号"`
 	StockOrderId uint   `gorm:"not null;default:0;comment:入库单 ID"`
+}
+
+func (StockTask) TableName() string {
+	return TablePrefix + "stock_task"
 }
 
 type StockTaskProduct struct {
@@ -101,6 +127,10 @@ type StockTaskProduct struct {
 	BinId       uint  `gorm:"not null;default:0;comment:库位 ID"`
 }
 
+func (StockTaskProduct) TableName() string {
+	return TablePrefix + "stock_task_product"
+}
+
 // ---------- 出库相关 ----------
 
 // 拣货车
@@ -108,6 +138,10 @@ type PickingCar struct {
 	base_model.BaseSoftDeletedModel
 	Code           string `gorm:"unique;size:60;not null;default:'';comment:编号"`
 	MaxBasketCount int8   `gorm:"not null;default:0;comment:最大拣货框数"`
+}
+
+func (PickingCar) TableName() string {
+	return TablePrefix + "picking_car"
 }
 
 type PickingCarFilter struct {
@@ -121,6 +155,10 @@ type PickingCarFilter struct {
 type PickingBasket struct {
 	base_model.BaseSoftDeletedModel
 	Code string `gorm:"size:60;not null;default:'';comment:编号"`
+}
+
+func (PickingBasket) TableName() string {
+	return TablePrefix + "picking_basket"
 }
 
 type PickingBasketFilter struct {
@@ -137,11 +175,19 @@ type PickingCarBasket struct {
 	PickingBasketId uint `gorm:"not null;default:0;comment:拣货篮 ID"`
 }
 
+func (PickingCarBasket) TableName() string {
+	return TablePrefix + "picking_car_basket"
+}
+
 // 拣货任务
 type PickingTask struct {
 	base_model.BaseSoftDeletedModel
 	PickingCarId uint `gorm:"not null;default:0;comment:拣货车 ID"`
 	StaffId      uint `gorm:"not null;default:0;comment:拣货员工 ID"`
+}
+
+func (PickingTask) TableName() string {
+	return TablePrefix + "picking_task"
 }
 
 // 拣货任务关联拣货框
@@ -150,6 +196,10 @@ type PickingTaskBasket struct {
 	PickingTaskId uint `gorm:"not null;default:0;comment:拣货任务 ID"`
 	PickingCarId  uint `gorm:"not null;default:0;comment:拣货车 ID"`
 	OrderId       uint `gorm:"not null;default:0;comment:订单 ID"`
+}
+
+func (PickingTaskBasket) TableName() string {
+	return TablePrefix + "picking_task_basket"
 }
 
 // 拣货框订单商品
@@ -162,6 +212,10 @@ type PickingTaskBasketProduct struct {
 	SkuCode             string `gorm:"not null;default:'';comment:SKU CODE"`
 	Num                 int16  `gorm:"not null;default:0;comment:应拣数量"`
 	ActualNum           int16  `gorm:"not null;default:0;comment:实拣数量"`
+}
+
+func (PickingTaskBasketProduct) TableName() string {
+	return TablePrefix + "picking_task_basket_product"
 }
 
 func Models() []interface{} {

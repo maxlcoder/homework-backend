@@ -9,6 +9,7 @@ import (
 	"github.com/jinzhu/copier"
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/request"
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/response"
+	model2 "github.com/maxlcoder/homework-backend/app/modules/core/model"
 	"github.com/maxlcoder/homework-backend/app/modules/core/service"
 	base_request "github.com/maxlcoder/homework-backend/app/request"
 	base_response "github.com/maxlcoder/homework-backend/app/response"
@@ -29,12 +30,14 @@ func NewRoleController(roleService service.RoleServiceInterface) *RoleController
 
 func (controller *RoleController) Page(c *gin.Context) {
 	var pagination model.Pagination
-	var filter model.RoleFilter
+	var filter model2.RoleFilter
 
 	if err := base_request.BindAndSetDefaults(c, &pagination); err != nil {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	// 当前管理员是否为租户
 
 	_ = c.ShouldBindQuery(&filter)
 	total, roles, err := controller.roleService.GetPageByFilter(filter, pagination)
@@ -42,7 +45,7 @@ func (controller *RoleController) Page(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	pageResponse := base_response.BuildPageResponse[model.Role, response.RoleResponse](roles, total, pagination.Page, pagination.PerPage)
+	pageResponse := base_response.BuildPageResponse[model2.Role, response.RoleResponse](roles, total, pagination.Page, pagination.PerPage)
 	controller.Success(c, pageResponse)
 
 }
@@ -55,13 +58,13 @@ func (controller *RoleController) Store(c *gin.Context) {
 		return
 	}
 
-	var role model.Role
+	var role model2.Role
 	err := copier.Copy(&role, &roleStoreRequest)
 	if err != nil {
 		controller.Error(c, 400, "数据获取失败")
 		return
 	}
-	var menus []model.Menu
+	var menus []model2.Menu
 	err = copier.Copy(&menus, &roleStoreRequest.Menus)
 	if err != nil {
 		controller.Error(c, 400, "数据获取失败")
@@ -92,7 +95,7 @@ func (controller *RoleController) Update(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	var role model.Role
+	var role model2.Role
 	err = copier.Copy(&role, &roleStoreRequest)
 	if err != nil {
 		controller.Error(c, 400, "数据获取失败")
@@ -101,7 +104,7 @@ func (controller *RoleController) Update(c *gin.Context) {
 
 	role.ID = uint(id)
 
-	var menus []model.Menu
+	var menus []model2.Menu
 	err = copier.Copy(&menus, &roleStoreRequest.Menus)
 	if err != nil {
 		controller.Error(c, 400, "数据获取失败")
@@ -125,7 +128,7 @@ func (controller *RoleController) Destroy(c *gin.Context) {
 		controller.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	var role model.Role
+	var role model2.Role
 	role.ID = uint(id)
 	err = controller.roleService.Delete(&role)
 	if err != nil {
