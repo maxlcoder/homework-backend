@@ -12,7 +12,6 @@ import (
 	api_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/api/middleware"
 	module_middleware "github.com/maxlcoder/homework-backend/app/modules/wms/middleware"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
-	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/service"
 
 	"gorm.io/gorm"
@@ -306,18 +305,11 @@ func (m *WmsModule) Init() contract.Module {
 	if !m.initialized {
 		// 初始化表
 		model.AutoMigrate(m.DB)
-
-		// 初始化仓库
-		pickingCarRepository := repository.NewPickingCarRepository(m.DB)
-		pickingBasketRepository := repository.NewPickingBasketRepository(m.DB)
-		binRepository := repository.NewBinRepository(m.DB)
-		staffRepository := repository.NewStaffRepository(m.DB)
-
 		// 初始化服务
-		pickingCarService := service.NewPickingCarService(m.DB, pickingCarRepository)
-		pickingBasketService := service.NewPickingBasketService(m.DB, pickingBasketRepository)
-		binService := service.NewBinService(m.DB, binRepository)
-		staffService := service.NewStaffService(m.DB, staffRepository)
+		pickingCarService := service.NewPickingCarService(m.DB)
+		pickingBasketService := service.NewPickingBasketService(m.DB)
+		binService := service.NewBinService(m.DB)
+		staffService := service.NewStaffService(m.DB)
 
 		// 初始化控制器
 		adminPickingCarController := wms_admin_controller.NewPickingCarController(pickingCarService)

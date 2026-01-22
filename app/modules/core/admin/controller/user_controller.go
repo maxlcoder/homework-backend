@@ -8,6 +8,7 @@ import (
 	"github.com/jinzhu/copier"
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/request"
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/response"
+	model2 "github.com/maxlcoder/homework-backend/app/modules/core/model"
 	"github.com/maxlcoder/homework-backend/app/modules/core/service"
 	base_response "github.com/maxlcoder/homework-backend/app/response"
 	"github.com/maxlcoder/homework-backend/model"
@@ -36,7 +37,7 @@ func (controller *UserController) Register(c *gin.Context) {
 		return
 	}
 
-	var user model.User
+	var user model2.User
 	err := copier.Copy(&user, &userCreateRequest)
 	if err != nil {
 		controller.Error(c, 400, "数据获取失败")
@@ -59,7 +60,7 @@ func (controller *UserController) Register(c *gin.Context) {
 
 func (controller *UserController) Me(c *gin.Context) {
 	user, _ := c.Get("id")
-	userModel := user.(*model.User)
+	userModel := user.(*model2.User)
 
 	user, err := controller.userService.GetById(userModel.ID)
 	if err != nil {

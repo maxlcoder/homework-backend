@@ -3,23 +3,25 @@ package service
 import (
 	"fmt"
 
-	"github.com/maxlcoder/homework-backend/model"
+	"github.com/maxlcoder/homework-backend/app/modules/core/model"
+	base_model "github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
+	"gorm.io/gorm"
 )
 
 type UserServiceInterface interface {
 	Create(*model.User) (*model.User, error)
 	GetById(id uint) (*model.User, error)
-	GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.User, error)
+	GetPageByFilter(modelFilter model.UserFilter, pagination base_model.Pagination) (int64, []model.User, error)
 }
 
 type UserService struct {
-	UserRepository repository.UserRepository
+	db *gorm.DB
 }
 
-func NewUserService(userRepository repository.UserRepository) UserServiceInterface {
+func NewUserService(db *gorm.DB) UserServiceInterface {
 	return &UserService{
-		UserRepository: userRepository,
+		db: db,
 	}
 }
 
@@ -31,11 +33,11 @@ func (u *UserService) Create(user *model.User) (*model.User, error) {
 	cond := repository.ConditionScope{
 		StructCond: userFiler,
 	}
-	findUser, _ := u.UserRepository.FindBy(cond)
+	findUser, _ := repository.NewBaseRepository[model.User](u.db).FindBy(cond)
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
-	err := u.UserRepository.Create(user, nil)
+	err := repository.NewBaseRepository[model.User](u.db).Create(user, nil)
 	if err != nil {
 		return nil, fmt.Errorf("用户创建失败: %w", err)
 	}
@@ -64,7 +66,7 @@ func (u *UserService) GetById(id uint) (*model.User, error) {
 	cond := repository.ConditionScope{
 		StructCond: userFiler,
 	}
-	user, err := u.UserRepository.FindBy(cond)
+	user, err := repository.NewBaseRepository[model.User](u.db).FindBy(cond)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +78,11 @@ func (u UserService) GetByObject() {
 	panic("implement me")
 }
 
-func (u UserService) GetPageByFilter(modelFilter model.UserFilter, pagination model.Pagination) (int64, []model.User, error) {
+func (u UserService) GetPageByFilter(modelFilter model.UserFilter, pagination base_model.Pagination) (int64, []model.User, error) {
 	cond := repository.ConditionScope{
 		StructCond: modelFilter,
 	}
-	total, users, err := u.UserRepository.Page(cond, pagination)
+	total, users, err := repository.NewBaseRepository[model.User](u.db).Page(cond, pagination)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
 	}

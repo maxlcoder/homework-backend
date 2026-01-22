@@ -13,9 +13,7 @@ import (
 	api_middleware "github.com/maxlcoder/homework-backend/app/modules/core/api/middleware"
 	"github.com/maxlcoder/homework-backend/app/modules/core/model"
 	core_model "github.com/maxlcoder/homework-backend/app/modules/core/model"
-	repository2 "github.com/maxlcoder/homework-backend/app/modules/core/repository"
 	"github.com/maxlcoder/homework-backend/app/modules/core/service"
-	"github.com/maxlcoder/homework-backend/repository"
 	"gorm.io/gorm"
 )
 
@@ -249,20 +247,14 @@ func (m *CoreModule) Init() contract.Module {
 		// 初始化表
 		model.AutoMigrate(m.DB)
 
-		userRepository := repository.NewUserRepository(m.DB)
 		// 初始化仓库
-		adminRepository := repository2.NewAdminRepository(m.DB)
-		roleRepository := repository2.NewRoleRepository(m.DB)
-		adminRoleRepository := repository2.NewAdminRoleRepository(m.DB)
-		menuRepository := repository2.NewMenuRepository(m.DB)
-		roleMenuRepository := repository2.NewRoleMenuRepository(m.DB)
-		tenantRepository := repository2.NewTenantRepository(m.DB)
 
-		userService := service.NewUserService(userRepository) // 初始化控制器
+		userService := service.NewUserService(m.DB) // 初始化控制器
+		menuService := service.NewMenuService(m.DB)
 		// 初始化服务
-		adminService := service.NewAdminService(m.DB, adminRepository, roleRepository, adminRoleRepository, menuRepository)
-		roleService := service.NewRoleService(m.DB, m.Enforcer, roleRepository, menuRepository, roleMenuRepository)
-		tenantService := service.NewTenantService(m.DB, tenantRepository)
+		adminService := service.NewAdminService(m.DB)
+		roleService := service.NewRoleService(m.DB, m.Enforcer, menuService)
+		tenantService := service.NewTenantService(m.DB)
 
 		m.ApiController = &ApiController{
 			UserController: api_controller.NewUserController(userService),

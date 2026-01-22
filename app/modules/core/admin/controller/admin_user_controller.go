@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/response"
+	model2 "github.com/maxlcoder/homework-backend/app/modules/core/model"
 	"github.com/maxlcoder/homework-backend/app/modules/core/service"
 	base_response "github.com/maxlcoder/homework-backend/app/response"
 	"github.com/maxlcoder/homework-backend/model"
@@ -27,7 +28,7 @@ func NewAdminUserController(adminService service.AdminServiceInterface, userServ
 
 func (controller *AdminUserController) Page(c *gin.Context) {
 	var pagination model.Pagination
-	var userFilter model.UserFilter
+	var userFilter model2.UserFilter
 	if err, ok := validator.BindQueryAndValidateAll(c, &pagination); !ok {
 		controller.Error(c, http.StatusBadRequest, err)
 		return

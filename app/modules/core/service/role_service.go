@@ -4,44 +4,41 @@ import (
 	"fmt"
 
 	"github.com/casbin/casbin/v2"
-	model2 "github.com/maxlcoder/homework-backend/app/modules/core/model"
-	repository2 "github.com/maxlcoder/homework-backend/app/modules/core/repository"
-	"github.com/maxlcoder/homework-backend/model"
+	"github.com/maxlcoder/homework-backend/app/modules/core/model"
+	base_model "github.com/maxlcoder/homework-backend/model"
+	"gorm.io/gorm/clause"
+
 	"github.com/maxlcoder/homework-backend/repository"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
 
 type RoleServiceInterface interface {
-	Create(role *model2.Role) (*model2.Role, error)
-	CreateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error)
-	UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error)
-	GetById(id uint) (*model2.Role, error)
-	GetPageByFilter(modelFilter model2.RoleFilter, pagination model.Pagination) (int64, []model2.Role, error)
-	Delete(role *model2.Role) error
+	Create(role *model.Role) (*model.Role, error)
+	CreateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error)
+	UpdateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error)
+	GetById(id uint) (*model.Role, error)
+	GetPageByFilter(modelFilter model.RoleFilter, pagination base_model.Pagination) (int64, []model.Role, error)
+	Delete(role *model.Role) error
 }
 
 type RoleService struct {
-	db                 *gorm.DB
-	enforcer           *casbin.Enforcer
-	RoleRepository     repository2.RoleRepository
-	MenuRepository     repository2.MenuRepository
-	RoleMenuRepository repository2.RoleMenuRepository
+	db          *gorm.DB
+	enforcer    *casbin.Enforcer
+	menuService MenuServiceInterface
 }
 
-func NewRoleService(db *gorm.DB, enforcer *casbin.Enforcer, roleRepository repository2.RoleRepository, menuRepository repository2.MenuRepository, roleMenuRepository repository2.RoleMenuRepository) RoleServiceInterface {
+func NewRoleService(db *gorm.DB, enforcer *casbin.Enforcer, menuService MenuServiceInterface) RoleServiceInterface {
 	return &RoleService{
-		db:                 db,
-		enforcer:           enforcer,
-		RoleRepository:     roleRepository,
-		MenuRepository:     menuRepository,
-		RoleMenuRepository: roleMenuRepository,
+		db:          db,
+		enforcer:    enforcer,
+		menuService: menuService,
 	}
 }
 
-func (u *RoleService) Create(role *model2.Role) (*model2.Role, error) {
+func (u *RoleService) Create(role *model.Role) (*model.Role, error) {
 	// 判断是否存在已经适用的名称
-	filter := model2.RoleFilter{
+	filter := model.RoleFilter{
 		Name: &role.Name,
 	}
 
@@ -49,21 +46,21 @@ func (u *RoleService) Create(role *model2.Role) (*model2.Role, error) {
 		StructCond: filter,
 	}
 
-	findUser, _ := u.RoleRepository.FindBy(cond)
+	findUser, _ := repository.NewBaseRepository[model.Role](u.db).FindBy(cond)
 	if findUser != nil {
 		return nil, fmt.Errorf("当前角色已存在，请检查")
 	}
-	err := u.RoleRepository.Create(role, nil)
+	err := repository.NewBaseRepository[model.Role](u.db).Create(role, nil)
 	if err != nil {
 		return nil, fmt.Errorf("用户创建失败: %w", err)
 	}
 	return role, nil
 }
 
-func (u *RoleService) CreateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error) {
+func (u *RoleService) CreateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error) {
 
 	// 判断是否存在已经适用的名称
-	filter := model2.RoleFilter{
+	filter := model.RoleFilter{
 		Name: &role.Name,
 	}
 
@@ -71,7 +68,7 @@ func (u *RoleService) CreateWithMenus(role *model2.Role, menus []model2.Menu) (*
 		StructCond: filter,
 	}
 
-	find, _ := u.RoleRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.Role](u.db).FindBy(cond)
 	if find != nil {
 		return nil, fmt.Errorf("当前角色已存在，请检查")
 	}
@@ -80,13 +77,13 @@ func (u *RoleService) CreateWithMenus(role *model2.Role, menus []model2.Menu) (*
 	menuCond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
-				return db.Where("id IN ?", lo.Map(menus, func(item model2.Menu, index int) uint {
+				return db.Where("id IN ?", lo.Map(menus, func(item model.Menu, index int) uint {
 					return item.ID
 				}))
 			},
 		},
 	}
-	menuCount, err := u.MenuRepository.CountBy(menuCond)
+	menuCount, err := repository.NewBaseRepository[model.Menu](u.db).CountBy(menuCond)
 	if err != nil {
 		return nil, fmt.Errorf("菜单参数校验失败，请检查")
 	}
@@ -96,43 +93,41 @@ func (u *RoleService) CreateWithMenus(role *model2.Role, menus []model2.Menu) (*
 
 	// 启动事务
 	err = u.db.Transaction(func(tx *gorm.DB) error {
-		err := u.RoleRepository.Create(role, tx)
+		err := repository.NewBaseRepository[model.Role](u.db).Create(role, tx)
 		if err != nil {
 			return fmt.Errorf("角色创建失败: %w", err)
 		}
 		// 菜单处理
-		var roleMenus []model2.RoleMenu
-		roleMenus = lo.Map(menus, func(item model2.Menu, index int) model2.RoleMenu {
-			return model2.RoleMenu{
+		var roleMenus []model.RoleMenu
+		roleMenus = lo.Map(menus, func(item model.Menu, index int) model.RoleMenu {
+			return model.RoleMenu{
 				RoleID: role.ID,
 				MenuID: item.ID,
 			}
 		})
 		if len(roleMenus) > 0 {
-			err := u.RoleMenuRepository.UpsertCreateBatch(roleMenus, tx)
-			if err != nil {
-				return fmt.Errorf("角色菜单关联创建失败: %w", err)
-			}
+			u.db.Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).Create(&roleMenus)
 		}
 
 		// 角色授权
 		// 菜单关联的权限
-		permissions, _ := u.MenuRepository.GetPermissionsByMenuIds(lo.Map(menus, func(item model2.Menu, index int) uint {
+		permissions, _ := u.GetPermissionsByMenuIds(lo.Map(menus, func(item model.Menu, index int) uint {
 			return item.ID
 		}))
 		// 1. role_permission 表增加记录
-		rolePermissions := lo.Map(permissions, func(item model2.Permission, index int) model2.RolePermission {
-			return model2.RolePermission{
+		rolePermissions := lo.Map(permissions, func(item model.Permission, index int) model.RolePermission {
+			return model.RolePermission{
 				RoleID:       role.ID,
 				PermissionID: item.ID,
 			}
 		})
-		err = u.RoleRepository.UpsertCreateRolePermissionBatch(rolePermissions, tx)
-		if err != nil {
-			return fmt.Errorf("角色权限关联创建失败: %w", err)
-		}
+		u.db.Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).Create(rolePermissions)
 		// 2. casbin 授权
-		casbinPermission := lo.Map(permissions, func(item model2.Permission, index int) []string {
+		casbinPermission := lo.Map(permissions, func(item model.Permission, index int) []string {
 			return []string{"1", item.PATH, item.Method}
 		})
 		if len(casbinPermission) > 0 {
@@ -150,15 +145,24 @@ func (u *RoleService) CreateWithMenus(role *model2.Role, menus []model2.Menu) (*
 	return role, nil
 }
 
-func (u *RoleService) UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*model2.Role, error) {
+func (u *RoleService) GetPermissionsByMenuIds(ids []uint) ([]model.Permission, error) {
+	subQuery := u.db.Model(&model.MenuPermission{}).
+		Select("permission_id").
+		Where("menu_id IN (?)", ids)
+	var permissions []model.Permission
+	u.db.Where("id IN (?)", subQuery).Find(&permissions)
+	return permissions, nil
+}
+
+func (u *RoleService) UpdateWithMenus(role *model.Role, menus []model.Menu) (*model.Role, error) {
 	// 判断角色是否存在
-	filter := model2.RoleFilter{
+	filter := model.RoleFilter{
 		ID: &role.ID,
 	}
 	cond := repository.ConditionScope{
 		StructCond: filter,
 	}
-	find, _ := u.RoleRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.Role](u.db).FindBy(cond)
 	if find == nil {
 		return nil, fmt.Errorf("当前角色不存在，请检查")
 	}
@@ -167,13 +171,13 @@ func (u *RoleService) UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*
 	menuCond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
-				return db.Where("id IN ?", lo.Map(menus, func(item model2.Menu, index int) uint {
+				return db.Where("id IN ?", lo.Map(menus, func(item model.Menu, index int) uint {
 					return item.ID
 				}))
 			},
 		},
 	}
-	menuCount, err := u.MenuRepository.CountBy(menuCond)
+	menuCount, err := repository.NewBaseRepository[model.Menu](u.db).CountBy(menuCond)
 	if err != nil {
 		return nil, fmt.Errorf("菜单参数校验失败，请检查")
 	}
@@ -183,7 +187,7 @@ func (u *RoleService) UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*
 
 	// 启动事务
 	err = u.db.Transaction(func(tx *gorm.DB) error {
-		err := u.RoleRepository.Update(role, tx)
+		err := repository.NewBaseRepository[model.Role](u.db).Update(role, tx)
 		if err != nil {
 			return fmt.Errorf("角色创建失败: %w", err)
 		}
@@ -196,47 +200,45 @@ func (u *RoleService) UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*
 				},
 			},
 		}
-		err = u.RoleMenuRepository.DeleteBy(deleteCond, tx)
+		err = repository.NewBaseRepository[model.RoleMenu](u.db).DeleteBy(deleteCond, tx)
 		if err != nil {
 			return fmt.Errorf("角色菜单处理失败: %w", err)
 		}
 		// 补充新菜单
-		var roleMenus []model2.RoleMenu
-		roleMenus = lo.Map(menus, func(item model2.Menu, index int) model2.RoleMenu {
-			return model2.RoleMenu{
+		var roleMenus []model.RoleMenu
+		roleMenus = lo.Map(menus, func(item model.Menu, index int) model.RoleMenu {
+			return model.RoleMenu{
 				RoleID: role.ID,
 				MenuID: item.ID,
 			}
 		})
 		if len(roleMenus) > 0 {
-			err := u.RoleMenuRepository.UpsertCreateBatch(roleMenus, tx)
-			if err != nil {
-				return fmt.Errorf("角色菜单关联创建失败: %w", err)
-			}
+			u.db.Clauses(clause.OnConflict{
+				DoNothing: true,
+			}).Create(&roleMenus)
 		}
 
 		// 角色授权
 		// 菜单关联的权限
-		permissions, _ := u.MenuRepository.GetPermissionsByMenuIds(lo.Map(menus, func(item model2.Menu, index int) uint {
+		permissions, _ := u.menuService.GetPermissionsByMenuIds(lo.Map(menus, func(item model.Menu, index int) uint {
 			return item.ID
 		}))
 		// 1. 先删除role_permission 表记录，再增加记录
 		// 删除记录
-		u.RoleRepository.DeleteRolePermissionsByRoleId(role.ID, tx)
+		u.db.Where("role_id = ?", role.ID).Delete(&model.RolePermission{})
 
-		rolePermissions := lo.Map(permissions, func(item model2.Permission, index int) model2.RolePermission {
-			return model2.RolePermission{
+		rolePermissions := lo.Map(permissions, func(item model.Permission, index int) model.RolePermission {
+			return model.RolePermission{
 				RoleID:       role.ID,
 				PermissionID: item.ID,
 			}
 		})
-		err = u.RoleRepository.UpsertCreateRolePermissionBatch(rolePermissions, tx)
-		if err != nil {
-			return fmt.Errorf("角色权限关联创建失败: %w", err)
-		}
+		u.db.Clauses(clause.OnConflict{
+			DoNothing: true,
+		}).Create(&rolePermissions)
 		// 2. 先删除 casbin 授权，再添加
 		u.enforcer.RemoveFilteredPolicy(0, "role_"+role.Name, "1")
-		casbinPermission := lo.Map(permissions, func(item model2.Permission, index int) []string {
+		casbinPermission := lo.Map(permissions, func(item model.Permission, index int) []string {
 			return []string{"1", item.PATH, item.Method}
 		})
 		if len(casbinPermission) > 0 {
@@ -255,10 +257,10 @@ func (u *RoleService) UpdateWithMenus(role *model2.Role, menus []model2.Menu) (*
 	return role, nil
 }
 
-func (u *RoleService) Delete(role *model2.Role) error {
+func (u *RoleService) Delete(role *model.Role) error {
 
 	// 检查角色是否存在
-	role, err := u.RoleRepository.FindById(role.ID)
+	role, err := repository.NewBaseRepository[model.Role](u.db).FindById(role.ID)
 	if err != nil {
 		return err
 	}
@@ -266,7 +268,7 @@ func (u *RoleService) Delete(role *model2.Role) error {
 	// 启动事务
 	err = u.db.Transaction(func(tx *gorm.DB) error {
 		// 1. 删除 role 表记录
-		err := u.RoleRepository.DeleteById(role.ID, tx)
+		err := repository.NewBaseRepository[model.Role](u.db).DeleteById(role.ID, tx)
 		if err != nil {
 			return fmt.Errorf("角色删除失败: %w", err)
 		}
@@ -278,12 +280,12 @@ func (u *RoleService) Delete(role *model2.Role) error {
 				},
 			},
 		}
-		err = u.RoleMenuRepository.DeleteBy(deleteCond, tx)
+		err = repository.NewBaseRepository[model.RoleMenu](u.db).DeleteBy(deleteCond, tx)
 		if err != nil {
 			return fmt.Errorf("角色菜单删除失败: %w", err)
 		}
 		// 3. 删除 role_permission 表记录
-		u.RoleRepository.DeleteRolePermissionsByRoleId(role.ID, tx)
+		u.db.Where("role_id = ?", role.ID).Delete(&model.RolePermission{})
 		// 4. 删除 casbin 记录
 		u.enforcer.RemoveFilteredPolicy(0, "role_"+role.Name, "1")
 		return nil
@@ -296,15 +298,15 @@ func (u *RoleService) List() {
 	panic("implement me")
 }
 
-func (u *RoleService) GetById(id uint) (*model2.Role, error) {
-	filter := model2.RoleFilter{
+func (u *RoleService) GetById(id uint) (*model.Role, error) {
+	filter := model.RoleFilter{
 		ID: &id,
 	}
 
 	cond := repository.ConditionScope{
 		StructCond: filter,
 	}
-	user, err := u.RoleRepository.FindBy(cond)
+	user, err := repository.NewBaseRepository[model.Role](u.db).FindBy(cond)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +318,7 @@ func (u *RoleService) GetByObject() {
 	panic("implement me")
 }
 
-func (u *RoleService) GetPageByFilter(modelFilter model2.RoleFilter, pagination model.Pagination) (int64, []model2.Role, error) {
+func (u *RoleService) GetPageByFilter(modelFilter model.RoleFilter, pagination base_model.Pagination) (int64, []model.Role, error) {
 
 	cond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{func(db *gorm.DB) *gorm.DB {
@@ -327,7 +329,7 @@ func (u *RoleService) GetPageByFilter(modelFilter model2.RoleFilter, pagination 
 		}},
 		Order: []string{"created_at desc"},
 	}
-	total, users, err := u.RoleRepository.Page(cond, pagination)
+	total, users, err := repository.NewBaseRepository[model.Role](u.db).Page(cond, pagination)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
 	}

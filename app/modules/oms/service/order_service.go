@@ -32,11 +32,11 @@ func (u *PickingCarService) Create(pickingCar *model.PickingCar) (*model.Picking
 	cond := repository.ConditionScope{
 		StructCond: filer,
 	}
-	find, _ := u.PickingCarRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.PickingCar](u.db).FindBy(cond)
 	if find != nil {
 		return nil, fmt.Errorf("当前拣货车编号不可用，请检查")
 	}
-	err := u.PickingCarRepository.Create(pickingCar, nil)
+	err := repository.NewBaseRepository[model.PickingCar](u.db).Create(pickingCar, nil)
 	if err != nil {
 		return nil, fmt.Errorf("拣货车创建失败: %w", err)
 	}

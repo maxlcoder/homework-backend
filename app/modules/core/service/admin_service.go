@@ -5,9 +5,8 @@ import (
 
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/request"
 	"github.com/maxlcoder/homework-backend/app/modules/core/model"
-	"github.com/maxlcoder/homework-backend/app/modules/core/repository"
 	base_model "github.com/maxlcoder/homework-backend/model"
-	base_repository "github.com/maxlcoder/homework-backend/repository"
+	"github.com/maxlcoder/homework-backend/repository"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
@@ -23,36 +22,24 @@ type AdminServiceInterface interface {
 }
 
 type AdminService struct {
-	db                  *gorm.DB
-	AdminRepository     repository.AdminRepository
-	RoleRepository      repository.RoleRepository
-	AdminRoleRepository repository.AdminRoleRepository
-	MenuRepository      repository.MenuRepository
+	db *gorm.DB
 }
 
-func NewAdminService(db *gorm.DB,
-	adminRepository repository.AdminRepository,
-	roleRepository repository.RoleRepository,
-	adminRoleRepository repository.AdminRoleRepository,
-	menuRepository repository.MenuRepository) AdminServiceInterface {
+func NewAdminService(db *gorm.DB) AdminServiceInterface {
 	return &AdminService{
-		db:                  db,
-		AdminRepository:     adminRepository,
-		RoleRepository:      roleRepository,
-		AdminRoleRepository: adminRoleRepository,
-		MenuRepository:      menuRepository,
+		db: db,
 	}
 }
 
 func (u *AdminService) Page(pageRequest request.AdminPageRequest) ([]model.Admin, int64, error) {
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		Preloads: []string{
 			"Roles",
 		},
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
 				if pageRequest.Name != nil && len(*pageRequest.Name) > 0 {
-					return base_repository.LikeScope("name", *pageRequest.Name)(db)
+					return repository.LikeScope("name", *pageRequest.Name)(db)
 				} else {
 					return db
 				}
@@ -67,7 +54,7 @@ func (u *AdminService) Page(pageRequest request.AdminPageRequest) ([]model.Admin
 	}
 
 	// 查询数据
-	count, admins, err := u.AdminRepository.Page(cond, pagination)
+	count, admins, err := repository.NewBaseRepository[model.Admin](u.db).Page(cond, pagination)
 	if err != nil {
 		return nil, 0, fmt.Errorf("获取管理员列表失败: %w", err)
 	}
@@ -81,17 +68,17 @@ func (u *AdminService) Create(admin *model.Admin, roles []model.Role) (*model.Ad
 		Name: &admin.Name,
 	}
 
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		StructCond: filter,
 	}
 
-	find, _ := u.AdminRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.Admin](u.db).FindBy(cond)
 	if find != nil {
 		return nil, fmt.Errorf("当前账号名称已存在，请检查")
 	}
 
 	// 角色校验
-	roleCond := base_repository.ConditionScope{
+	roleCond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
 				return db.Where("id IN ?", lo.Map(roles, func(item model.Role, index int) uint {
@@ -100,7 +87,7 @@ func (u *AdminService) Create(admin *model.Admin, roles []model.Role) (*model.Ad
 			},
 		},
 	}
-	roleCount, err := u.RoleRepository.CountBy(roleCond)
+	roleCount, err := repository.NewBaseRepository[model.Admin](u.db).CountBy(roleCond)
 	if err != nil {
 		return nil, fmt.Errorf("角色参数校验失败，请检查")
 	}
@@ -108,7 +95,7 @@ func (u *AdminService) Create(admin *model.Admin, roles []model.Role) (*model.Ad
 		return nil, fmt.Errorf("角色参数校验失败，请检查")
 	}
 
-	err = u.AdminRepository.Create(admin, nil)
+	err = repository.NewBaseRepository[model.Admin](u.db).Create(admin, nil)
 	if err != nil {
 		return nil, fmt.Errorf("账号创建失败: %w", err)
 	}
@@ -122,7 +109,7 @@ func (u *AdminService) Update(admin *model.Admin, roles []model.Role) (*model.Ad
 		Name: &admin.Name,
 	}
 
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		StructCond: filter,
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
@@ -136,13 +123,13 @@ func (u *AdminService) Update(admin *model.Admin, roles []model.Role) (*model.Ad
 		},
 	}
 
-	find, _ := u.AdminRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.Admin](u.db).FindBy(cond)
 	if find != nil {
 		return nil, fmt.Errorf("当前账号名称已被占用，请检查")
 	}
 
 	// 角色校验
-	roleCond := base_repository.ConditionScope{
+	roleCond := repository.ConditionScope{
 		Scopes: []func(*gorm.DB) *gorm.DB{
 			func(db *gorm.DB) *gorm.DB {
 				return db.Where("id IN ?", lo.Map(roles, func(item model.Role, index int) uint {
@@ -151,7 +138,7 @@ func (u *AdminService) Update(admin *model.Admin, roles []model.Role) (*model.Ad
 			},
 		},
 	}
-	roleCount, err := u.RoleRepository.CountBy(roleCond)
+	roleCount, err := repository.NewBaseRepository[model.Admin](u.db).CountBy(roleCond)
 	if err != nil {
 		return nil, fmt.Errorf("角色参数校验失败，请检查")
 	}
@@ -161,15 +148,15 @@ func (u *AdminService) Update(admin *model.Admin, roles []model.Role) (*model.Ad
 
 	err = u.db.Transaction(func(tx *gorm.DB) error {
 		// 删除之前的 admin_roles 关联
-		roleCond := base_repository.ConditionScope{
+		roleCond := repository.ConditionScope{
 			Scopes: []func(*gorm.DB) *gorm.DB{
 				func(db *gorm.DB) *gorm.DB {
 					return db.Where("admin_id = ?", admin.ID)
 				},
 			},
 		}
-		u.AdminRoleRepository.DeleteBy(roleCond, tx)
-		err = u.AdminRepository.Update(admin, tx)
+		repository.NewBaseRepository[model.Admin](u.db).DeleteBy(roleCond, tx)
+		err = repository.NewBaseRepository[model.Admin](u.db).Update(admin, tx)
 		if err != nil {
 			return err
 		}
@@ -185,12 +172,12 @@ func (u *AdminService) Update(admin *model.Admin, roles []model.Role) (*model.Ad
 func (u *AdminService) Delete(id uint) error {
 	err := u.db.Transaction(func(tx *gorm.DB) error {
 		// 删除 admins
-		u.AdminRepository.DeleteById(id, tx)
+		repository.NewBaseRepository[model.Admin](u.db).DeleteById(id, tx)
 		// 删除 admin_roles
-		cond := base_repository.ConditionScope{
+		cond := repository.ConditionScope{
 			StructCond: model.Admin{BaseModel: base_model.BaseModel{ID: id}},
 		}
-		u.AdminRoleRepository.DeleteBy(cond, tx)
+		repository.NewBaseRepository[model.Admin](u.db).DeleteBy(cond, tx)
 		return nil
 	})
 	if err != nil {
@@ -203,13 +190,13 @@ func (u *AdminService) FindById(id uint) (*model.Admin, error) {
 	filter := model.AdminFilter{
 		ID: &id,
 	}
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		StructCond: filter,
 		Preloads: []string{
 			"Roles",
 		},
 	}
-	user, err := u.AdminRepository.FindBy(cond)
+	user, err := repository.NewBaseRepository[model.Admin](u.db).FindBy(cond)
 	if err != nil {
 		return nil, fmt.Errorf("账号查询失败: %w", err)
 	}
@@ -220,9 +207,15 @@ func (u *AdminService) FindById(id uint) (*model.Admin, error) {
 }
 
 func (u *AdminService) GetMenusByRoleId(roleId uint) ([]*model.Menu, error) {
-	menus, error := u.MenuRepository.GetMenusByRoleId(roleId)
-	if error != nil {
-		return nil, error
+	var menus []model.Menu
+	subQuery := u.db.Model(&model.RoleMenu{}).
+		Select("1").
+		Where("role_menus.menu_id = menus.id").
+		Where("role_id = ?", roleId)
+
+	err := u.db.Where("EXISTS (?)", subQuery).Find(&menus).Error
+	if err != nil {
+		return nil, err
 	}
 	return lo.Map(menus, func(menu model.Menu, index int) *model.Menu {
 		return &menus[index]

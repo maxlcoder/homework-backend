@@ -39,6 +39,13 @@ func (r *BaseRepository[T]) FindById(id uint) (*T, error) {
 	}
 	return &entity, nil
 }
+func (r *BaseRepository[T]) FindByName(name string) (*T, error) {
+	var entity T
+	if err := r.DB.Where("name = ?", name).First(&entity).Error; err != nil {
+		return nil, err
+	}
+	return &entity, nil
+}
 
 func (r *BaseRepository[T]) Update(entity *T, tx *gorm.DB) error {
 	return r.getDB(tx).Updates(entity).Error

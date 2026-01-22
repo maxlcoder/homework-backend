@@ -2,10 +2,12 @@ package model
 
 import (
 	"time"
+
+	model2 "github.com/maxlcoder/homework-backend/model"
 )
 
 type User struct {
-	BaseModel
+	model2.BaseModel
 	Name     string `gorm:"size:30;unique;not null;default:''"`
 	Email    string `gorm:"size:60;unique;not null;default:''"`
 	Age      uint8  `gorm:"not null;default:0"`

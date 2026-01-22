@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/maxlcoder/homework-backend/app/modules/core/model"
-	"github.com/maxlcoder/homework-backend/app/modules/core/repository"
 	base_model "github.com/maxlcoder/homework-backend/model"
-	base_repository "github.com/maxlcoder/homework-backend/repository"
+	"github.com/maxlcoder/homework-backend/repository"
 	"gorm.io/gorm"
 )
 
@@ -14,17 +13,18 @@ type MenuServiceInterface interface {
 	Create(menu *model.Menu) (*model.Menu, error)
 	GetById(id uint) (*model.Menu, error)
 	GetPageByFilter(modelFilter model.MenuFilter, pagination base_model.Pagination) (int64, []model.Menu, error)
+	//GetPermissionsByMenuId(id uint) ([]model.Permission, error)
+	GetPermissionsByMenuIds(ids []uint) ([]model.Permission, error)
+	//GetMenusByRoleId(roleId uint) ([]model.Menu, error)
 }
 
 type MenuService struct {
-	db             *gorm.DB
-	MenuRepository repository.MenuRepository
+	db *gorm.DB
 }
 
-func NewMenuService(db *gorm.DB, menuRepository repository.MenuRepository) MenuServiceInterface {
+func NewMenuService(db *gorm.DB) MenuServiceInterface {
 	return &MenuService{
-		db:             db,
-		MenuRepository: menuRepository,
+		db: db,
 	}
 }
 
@@ -33,14 +33,14 @@ func (u *MenuService) Create(menu *model.Menu) (*model.Menu, error) {
 	filter := model.MenuFilter{
 		Name: &menu.Name,
 	}
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		StructCond: filter,
 	}
-	findUser, _ := u.MenuRepository.FindBy(cond)
+	findUser, _ := repository.NewBaseRepository[model.Menu](u.db).FindBy(cond)
 	if findUser != nil {
 		return nil, fmt.Errorf("当前用户名不可用，请检查")
 	}
-	err := u.MenuRepository.Create(menu, nil)
+	err := repository.NewBaseRepository[model.Menu](u.db).Create(menu, nil)
 	if err != nil {
 		return nil, fmt.Errorf("用户创建失败: %w", err)
 	}
@@ -66,10 +66,10 @@ func (u *MenuService) GetById(id uint) (*model.Menu, error) {
 	filter := model.MenuFilter{
 		ID: &id,
 	}
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		StructCond: filter,
 	}
-	user, err := u.MenuRepository.FindBy(cond)
+	user, err := repository.NewBaseRepository[model.Menu](u.db).FindBy(cond)
 	if err != nil {
 		return nil, err
 	}
@@ -83,13 +83,22 @@ func (u *MenuService) GetByObject() {
 
 func (u *MenuService) GetPageByFilter(modelFilter model.MenuFilter, pagination base_model.Pagination) (int64, []model.Menu, error) {
 
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		StructCond: modelFilter,
 	}
 
-	total, menus, err := u.MenuRepository.Page(cond, pagination)
+	total, menus, err := repository.NewBaseRepository[model.Menu](u.db).Page(cond, pagination)
 	if err != nil {
 		return 0, nil, fmt.Errorf("用户分页查询失败: %w", err)
 	}
 	return total, menus, nil
+}
+
+func (u *MenuService) GetPermissionsByMenuIds(ids []uint) ([]model.Permission, error) {
+	subQuery := u.db.Model(&model.MenuPermission{}).
+		Select("permission_id").
+		Where("menu_id IN (?)", ids)
+	var permissions []model.Permission
+	u.db.Where("id IN (?)", subQuery).Find(&permissions)
+	return permissions, nil
 }

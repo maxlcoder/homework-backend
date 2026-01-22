@@ -5,9 +5,8 @@ import (
 
 	"github.com/maxlcoder/homework-backend/app/modules/wms/admin/request"
 	"github.com/maxlcoder/homework-backend/app/modules/wms/model"
-	"github.com/maxlcoder/homework-backend/app/modules/wms/repository"
 	base_model "github.com/maxlcoder/homework-backend/model"
-	base_repository "github.com/maxlcoder/homework-backend/repository"
+	"github.com/maxlcoder/homework-backend/repository"
 	"gorm.io/gorm"
 )
 
@@ -20,19 +19,17 @@ type PickingBasketServiceInterface interface {
 }
 
 type PickingBasketService struct {
-	db                      *gorm.DB
-	PickingBasketRepository repository.PickingBasketRepository
+	db *gorm.DB
 }
 
-func NewPickingBasketService(db *gorm.DB, pickingBasketRepository repository.PickingBasketRepository) PickingBasketServiceInterface {
+func NewPickingBasketService(db *gorm.DB) PickingBasketServiceInterface {
 	return &PickingBasketService{
-		db:                      db,
-		PickingBasketRepository: pickingBasketRepository,
+		db: db,
 	}
 }
 
 func (u *PickingBasketService) Page(pageRequest request.PickingBasketPageRequest) ([]model.PickingBasket, int64, error) {
-	cond := base_repository.ConditionScope{}
+	cond := repository.ConditionScope{}
 
 	if pageRequest.Code != "" {
 		cond.StructCond = model.PickingBasketFilter{
@@ -47,7 +44,7 @@ func (u *PickingBasketService) Page(pageRequest request.PickingBasketPageRequest
 	}
 
 	// 查询数据
-	count, pickingCars, err := u.PickingBasketRepository.Page(cond, pagination)
+	count, pickingCars, err := repository.NewBaseRepository[model.PickingBasket](u.db).Page(cond, pagination)
 	if err != nil {
 		return nil, 0, fmt.Errorf("获取拣货车列表失败: %w", err)
 	}
@@ -60,14 +57,14 @@ func (u *PickingBasketService) Create(pickingBasket *model.PickingBasket) (*mode
 	filer := model.PickingBasketFilter{
 		Code: &pickingBasket.Code,
 	}
-	cond := base_repository.ConditionScope{
+	cond := repository.ConditionScope{
 		StructCond: filer,
 	}
-	find, _ := u.PickingBasketRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.PickingBasket](u.db).FindBy(cond)
 	if find != nil {
 		return nil, fmt.Errorf("当前拣货框编号不可用，请检查")
 	}
-	err := u.PickingBasketRepository.Create(pickingBasket, nil)
+	err := repository.NewBaseRepository[model.PickingBasket](u.db).Create(pickingBasket, nil)
 	if err != nil {
 		return nil, fmt.Errorf("拣货框创建失败: %w", err)
 	}
@@ -80,7 +77,7 @@ func (u *PickingBasketService) Update(pickingBasket *model.PickingBasket) (*mode
 }
 
 func (u *PickingBasketService) Delete(id uint) error {
-	err := u.PickingBasketRepository.DeleteById(id, nil)
+	err := repository.NewBaseRepository[model.PickingBasket](u.db).DeleteById(id, nil)
 	if err != nil {
 		return fmt.Errorf("拣货篮删除失败: %w", err)
 	}
@@ -88,7 +85,7 @@ func (u *PickingBasketService) Delete(id uint) error {
 }
 
 func (u *PickingBasketService) FindById(id uint) (*model.PickingBasket, error) {
-	pickingBasket, err := u.PickingBasketRepository.FindById(id)
+	pickingBasket, err := repository.NewBaseRepository[model.PickingBasket](u.db).FindById(id)
 	if err != nil {
 		return nil, fmt.Errorf("获取拣货篮失败: %w", err)
 	}

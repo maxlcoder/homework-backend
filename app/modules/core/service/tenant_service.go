@@ -4,34 +4,31 @@ import (
 	"fmt"
 
 	"github.com/maxlcoder/homework-backend/app/modules/core/admin/request"
-	model2 "github.com/maxlcoder/homework-backend/app/modules/core/model"
-	repository2 "github.com/maxlcoder/homework-backend/app/modules/core/repository"
-	"github.com/maxlcoder/homework-backend/model"
+	"github.com/maxlcoder/homework-backend/app/modules/core/model"
+	base_model "github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/repository"
 	"gorm.io/gorm"
 )
 
 type TenantServiceInterface interface {
-	Page(pageRequest request.TenantPageRequest) ([]model2.Tenant, int64, error)
-	Create(model *model2.Tenant) (*model2.Tenant, error)
-	Update(model *model2.Tenant) (*model2.Tenant, error)
+	Page(pageRequest request.TenantPageRequest) ([]model.Tenant, int64, error)
+	Create(model *model.Tenant) (*model.Tenant, error)
+	Update(model *model.Tenant) (*model.Tenant, error)
 	Delete(id uint) error
-	FindById(id uint) (*model2.Tenant, error)
+	FindById(id uint) (*model.Tenant, error)
 }
 
 type TenantService struct {
-	db               *gorm.DB
-	TenantRepository repository2.TenantRepository
+	db *gorm.DB
 }
 
-func NewTenantService(db *gorm.DB, tenantRepository repository2.TenantRepository) TenantServiceInterface {
+func NewTenantService(db *gorm.DB) TenantServiceInterface {
 	return &TenantService{
-		db:               db,
-		TenantRepository: tenantRepository,
+		db: db,
 	}
 }
 
-func (u *TenantService) Page(pageRequest request.TenantPageRequest) ([]model2.Tenant, int64, error) {
+func (u *TenantService) Page(pageRequest request.TenantPageRequest) ([]model.Tenant, int64, error) {
 	cond := repository.ConditionScope{}
 
 	if pageRequest.Name != nil && len(*pageRequest.Name) > 0 {
@@ -41,13 +38,13 @@ func (u *TenantService) Page(pageRequest request.TenantPageRequest) ([]model2.Te
 	}
 
 	// 创建分页参数
-	pagination := model.Pagination{
+	pagination := base_model.Pagination{
 		Page:    pageRequest.Page,
 		PerPage: pageRequest.PerPage,
 	}
 
 	// 查询数据
-	count, tenants, err := u.TenantRepository.Page(cond, pagination)
+	count, tenants, err := repository.NewBaseRepository[model.Tenant](u.db).Page(cond, pagination)
 	if err != nil {
 		return nil, 0, fmt.Errorf("获取租户列表失败: %w", err)
 	}
@@ -55,39 +52,39 @@ func (u *TenantService) Page(pageRequest request.TenantPageRequest) ([]model2.Te
 	return tenants, count, nil
 }
 
-func (u *TenantService) Create(tenant *model2.Tenant) (*model2.Tenant, error) {
+func (u *TenantService) Create(tenant *model.Tenant) (*model.Tenant, error) {
 	// 判断是否存在已经适用的名称
-	filer := model2.Tenant{
+	filer := model.Tenant{
 		Name: tenant.Name,
 	}
 	cond := repository.ConditionScope{
 		StructCond: filer,
 	}
-	find, _ := u.TenantRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.Tenant](u.db).FindBy(cond)
 	if find != nil {
 		return nil, fmt.Errorf("当前租户名称不可用，请检查")
 	}
-	err := u.TenantRepository.Create(tenant, nil)
+	err := repository.NewBaseRepository[model.Tenant](u.db).Create(tenant, nil)
 	if err != nil {
 		return nil, fmt.Errorf("租户创建失败: %w", err)
 	}
 	return tenant, nil
 }
 
-func (u *TenantService) Update(tenant *model2.Tenant) (*model2.Tenant, error) {
+func (u *TenantService) Update(tenant *model.Tenant) (*model.Tenant, error) {
 	// 判断是否存在已经适用的名称（排除自身）
-	filer := model2.Tenant{
+	filer := model.Tenant{
 		Name: tenant.Name,
 	}
 	cond := repository.ConditionScope{
 		StructCond: filer,
 	}
-	find, _ := u.TenantRepository.FindBy(cond)
+	find, _ := repository.NewBaseRepository[model.Tenant](u.db).FindBy(cond)
 	if find != nil && find.ID != tenant.ID {
 		return nil, fmt.Errorf("当前租户名称不可用，请检查")
 	}
 
-	err := u.TenantRepository.Update(tenant, u.db)
+	err := repository.NewBaseRepository[model.Tenant](u.db).Update(tenant, u.db)
 	if err != nil {
 		return nil, fmt.Errorf("租户更新失败: %w", err)
 	}
@@ -95,15 +92,15 @@ func (u *TenantService) Update(tenant *model2.Tenant) (*model2.Tenant, error) {
 }
 
 func (u *TenantService) Delete(id uint) error {
-	err := u.TenantRepository.DeleteById(id, nil)
+	err := repository.NewBaseRepository[model.Tenant](u.db).DeleteById(id, nil)
 	if err != nil {
 		return fmt.Errorf("租户删除失败: %w", err)
 	}
 	return nil
 }
 
-func (u *TenantService) FindById(id uint) (*model2.Tenant, error) {
-	tenant, err := u.TenantRepository.FindById(id)
+func (u *TenantService) FindById(id uint) (*model.Tenant, error) {
+	tenant, err := repository.NewBaseRepository[model.Tenant](u.db).FindById(id)
 	if err != nil {
 		return nil, fmt.Errorf("租户查询失败: %w", err)
 	}

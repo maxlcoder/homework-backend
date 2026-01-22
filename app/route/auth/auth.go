@@ -19,10 +19,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	userRepository repository.UserRepository
-)
-
 type lgoin struct {
 	Name     string `form:"name" json:"name" binding:"required"`
 	Password string `form:"password" json:"password" binding:"required"`
@@ -47,11 +43,11 @@ func InitJwtParams() *jwt.GinJWTMiddleware {
 		Timeout:     time.Hour,
 		MaxRefresh:  time.Hour,
 		IdentityKey: identityKey,
-		PayloadFunc: payloadFunc[model.User, *model.User](),
+		PayloadFunc: payloadFunc[core_model.User, *core_model.User](),
 
 		IdentityHandler: identityHandler(),
-		Authenticator:   authenticator[model.User, *model.User](),
-		Authorizator:    authorizator[model.User](),
+		Authenticator:   authenticator[core_model.User, *core_model.User](),
+		Authorizator:    authorizator[core_model.User](),
 		Unauthorized:    unauthorized(),
 		TokenLookup:     "header: Authorization",
 		TokenHeadName:   "Bearer",
@@ -128,7 +124,7 @@ func authenticator[T any, PT interface {
 	}
 }
 
-func authorizator[T model.User | core_model.Admin]() func(data interface{}, c *gin.Context) bool {
+func authorizator[T core_model.User | core_model.Admin]() func(data interface{}, c *gin.Context) bool {
 	// 用户类型传入
 	return func(data interface{}, c *gin.Context) bool {
 		tType := reflect.TypeOf(new(T)).Elem().Name()
@@ -175,7 +171,7 @@ func identityHandler() func(c *gin.Context) interface{} {
 		case "User":
 			// 设置全局 user_id
 			c.Set("user_id", userId)
-			var user model.User
+			var user core_model.User
 			user.ID = userId
 			return &user
 		case "Admin":

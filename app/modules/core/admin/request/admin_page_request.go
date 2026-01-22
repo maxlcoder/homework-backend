@@ -1,10 +1,11 @@
 package request
 
+import "github.com/maxlcoder/homework-backend/app/request"
+
 // AdminPageRequest 管理员列表请求（公共）
 type AdminPageRequest struct {
-	Page    int     `form:"page" binding:"min=1" label:"页码" default:"1"`
-	PerPage int     `form:"per_page" binding:"min=1,max=100" label:"每页数量" default:"10"`
-	Name    *string `form:"name" json:"name" binding:"omitempty" label:"用户名"`
+	request.PageRequest
+	Name *string `form:"name" json:"name" binding:"omitempty" label:"用户名"`
 }
 
 // SetDefaults 为 AdminPageRequest 设置默认值

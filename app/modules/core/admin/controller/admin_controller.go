@@ -15,6 +15,7 @@ import (
 	base_response "github.com/maxlcoder/homework-backend/app/response"
 	base_model "github.com/maxlcoder/homework-backend/model"
 	"github.com/maxlcoder/homework-backend/pkg/validator"
+	"github.com/samber/lo"
 )
 
 type AdminController struct {
@@ -122,6 +123,14 @@ func (controller *AdminController) Store(c *gin.Context) {
 	err = copier.Copy(&roles, &adminStoreRequest.Roles)
 	if err != nil {
 		controller.Error(c, http.StatusBadRequest, "数据获取失败")
+		return
+	}
+
+	// 程序里面特别校验，不能新建超管
+	if lo.ContainsBy(roles, func(role model.Role) bool {
+		return role.ID == 1
+	}) {
+		controller.Error(c, http.StatusBadRequest, "当前账号不能新建超管")
 		return
 	}
 
